@@ -1,10 +1,10 @@
 # LIB1d_md
 
-**Multi-domain time integration with adaptive coupling for 1D Lithium-Ion Batteries (LIBs) microscale simulations**
+**Multi-domain time integration method with adaptive, implicit/explicit, and high-order coupling demonstrated for 1D lithium-ion batteries half-cell simulations at the microscale.**
 
+This repository provides Jupyter notebooks to reproduce the main results presented in [1].
 
-This repository provides Jupyter notebooks to reproduce the main results presented in:
-**Asad A., de Loubens, R., François, L., Massot, M.,**  
-High-order adaptive multi-domain time integration scheme for microscale lithium-ion batteries simulations (*article in revision at SMAI JCM*)  
-[https://arxiv.org/abs/2310.06573](https://arxiv.org/abs/2310.06573)
-
+[1] A. Asad, R. de Loubens, L. François, and M. Massot,  
+*High-order adaptive multi-domain time integration scheme for microscale lithium-ion batteries simulations*,  
+SMAI Journal of Computational Mathematics, 2024 (*article in revision*).  
+Available at: [https://arxiv.org/abs/2310.06573](https://arxiv.org/abs/2310.06573).
