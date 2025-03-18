@@ -1,0 +1,107 @@
+[
+    {
+   
+    "Constants":
+    {
+        "F":
+        {
+            "value": 96487,
+            "unit": "C/mol" 
+        },
+        "R": 
+        {
+            "value": 8.314, 
+            "unit": "J/(K*mol)"
+        },
+        "T": 
+        {
+            "value": 298.15,
+            "unit": "K"
+        }
+    },
+    "Electrolyte":
+    {
+        "L_e":
+        {
+            "value": 20.0e-6,
+            "unit": "m"            
+        },
+        "c_e_i":
+        {
+            "value": 1000.0,
+            "unit": "m^2/s"            
+        },
+        "D_e_c":
+        {
+            "value": 1.0e-10,
+            "unit": "m^2/s"            
+        },
+        "kappa_e_c":
+        {
+            "value": 1.0,
+            "unit": "S/m"            
+        },
+        "t_0_plus":
+        {
+            "value": 0.4,
+            "unit": "unitless"            
+        },
+        "del_e":
+        {
+            "value": 0.0,
+            "unit": "unitless"            
+        }
+    },
+    "Electrode":
+    {
+        "L_am":
+        {
+            "value": 10.0e-6,
+            "unit": "m"            
+        },
+        "c_s_max":
+        {
+            "value": 26000.0,
+            "unit": "mol/m^3"
+        },
+        "D_am_c":
+        {
+            "value": 3.0e-14,
+            "unit": "m^2/s"            
+        },
+        "sigma_am_c":
+        {
+            "value": 100.0,
+            "unit": "S/m"             
+        }
+                
+    },
+    "CurrentCollector":
+    {
+        "L_cc":
+        {
+            "value": 10.0e-6,
+            "unit": "m"            
+        },
+        "sigma_cc_c":
+        {
+            "value": 3.7e3,
+            "unit": "S/m"             
+        }
+    },
+    "ButlerVolmerParams":
+    {
+        "i_0_Li":
+        {
+            "value": 10.0,
+            "unit": "A/m^2"
+        },
+        "k_0_C":
+        {
+            "value":  8.9e-7,
+            "unit": "C*m^2.5/(s*mol^1.5)*Faraday'sConstant"    
+        }
+    }
+    
+}
+]

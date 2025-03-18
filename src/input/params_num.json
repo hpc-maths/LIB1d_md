@@ -1,0 +1,67 @@
+[
+    {
+   
+    "Mesh":
+    {
+        "ne":
+        {
+            "value": 100,
+
+            "comment": "nbs of cells in electrolyte" 
+        },
+        "nam": 
+        {
+            "value": 50, 
+            "comment": "nbs of cells in active material"
+        },
+        "ncc": 
+        {
+            "value": 50,
+            "comment": "nbs of cells in current collector"
+        }
+    },
+    "TimeIntegration":
+    {
+        "tini":
+        {
+            "value": 0.0,
+            "unit": "sec"            
+        },
+        "tend":
+        {
+            "value": 10.0,
+            "unit": "sec"            
+        },
+        "dt":
+        {
+            "value": 1.0,
+            "unit": "sec"            
+        }
+    },
+    "ChargeRate":
+    {
+        "type":
+        {
+            "value": "CC",
+            "comment": "CC (for constant current) or CV (for constant voltage)"
+        },
+        "xi":
+        {
+            "value": 1.0,
+            "comment": "fraction of 1C rate: >0 for charge; <0 for discharge in case of CC charge/discharge"
+        },
+        "c_s_i":
+        {
+            "value": 13000.0,
+            "comment": "13000 for charge; 1000 for discharge"
+        },
+        "phi_s_L":
+        {
+            "value": 0.7,
+            "comment": "Volts of potential imposed for CV charge/discharge: set xi for initialization"
+        }
+        
+    }
+    
+}
+]
