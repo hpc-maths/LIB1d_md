@@ -14,8 +14,12 @@ setup(
     url="https://github.com/hpc-maths/LIB1d_md",
     packages=find_packages(),
     install_requires=[
+        'jupyter', 
+        'notebook',
+        'ipykernel',
+        'ipywidgets',
         'numpy',
-        'scipy',
+        'scipy>=1.9.0,<=1.10.1',
         'matplotlib',
         'tqdm',
         'joblib'
@@ -25,6 +29,6 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.6, <3.10',
     license="BSD-3-Clause",
 )
