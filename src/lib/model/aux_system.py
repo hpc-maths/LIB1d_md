@@ -73,7 +73,7 @@ def G_aux_c_e(t, c, phi, v_aux_c, options_electrolyte, options_cathode, alg=None
     
     if alg or options_electrolyte['sim_type'] in ["monolithic", "md_coupling_vars"]:  
         ise_C = bv.ise_C(v_aux_c[0]*c_e_c, v_aux_c[1]*phi_c, v_aux_c[2]*c_s_c, v_aux_c[3]*phi_c, options_electrolyte, options_cathode)
-    elif options_electrolyte['sim_type']=="cosim_flux":
+    elif options_electrolyte['sim_type']=="md_sim_flux":
         ise_C = options_electrolyte['coupling_flux'](t)
     else:
         raise Exception ('Define simulation type in electrolyte')
@@ -95,7 +95,7 @@ def G_aux_c_s(t, c, phi, v_aux_c, options_electrolyte, options_cathode, alg=None
     
     if alg or options_cathode['sim_type'] in ["monolithic", "md_coupling_vars"]:  
         ise_C = bv.ise_C(v_aux_c[0]*c_e_c, v_aux_c[1]*phi_c, v_aux_c[2]*c_s_c, v_aux_c[3]*phi_c, options_electrolyte, options_cathode)
-    elif options_cathode['sim_type']=="cosim_flux":
+    elif options_cathode['sim_type']=="md_sim_flux":
         ise_C = options_cathode['coupling_flux'](t)
         phi = options_cathode['coupling_var_phi_s'](t)
     else:

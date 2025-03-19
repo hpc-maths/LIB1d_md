@@ -28,7 +28,7 @@ def func_U_e(t, u, cs=None, phis=None, options_electrolyte=None, options_cathode
     
     if (options_electrolyte['sim_type']=="md_coupling_vars"):
         u_aux_c_s = options_cathode['coupling_vars'](t)
-    elif(options_electrolyte['sim_type']=="cosim_flux"):
+    elif(options_electrolyte['sim_type']=="md_sim_flux"):
         u_aux_c_s = np.r_[cs, phis] # Pass None vales to flx_Ne, flx_ie and G_aux_c_e
     elif(options_electrolyte['sim_type']=="monolithic"):
         u_aux_c_s = np.r_[cs, phis]
@@ -68,7 +68,7 @@ def func_U_s(t, u, ce=None, phie=None, options_electrolyte=None, options_cathode
     
     if (options_cathode['sim_type']=="md_coupling_vars"):
         u_aux_c_e = options_electrolyte['coupling_vars'](t)
-    elif(options_cathode['sim_type']=="cosim_flux"):
+    elif(options_cathode['sim_type']=="md_sim_flux"):
         u_aux_c_e = np.r_[ce, phie] # Pass None vales to flx_Ns, flx_is and G_aux_c_s
     elif(options_cathode['sim_type']=="monolithic"):
         u_aux_c_e = np.r_[ce, phie]
@@ -87,7 +87,7 @@ def func_U_s(t, u, ce=None, phie=None, options_electrolyte=None, options_cathode
     Ffs = varepsln*(Fs[1:] - Fs[0:-1])/dx_s[:]
     Ggs = (Gs[1:] - Gs[0:-1])/dx_s[:]
     
-    if (options_cathode['sim_type']=="cosim_flux"):
+    if (options_cathode['sim_type']=="md_sim_flux"):
         sigma_am = options_cathode['activematerial']['parameters']['sigma_am']
         Ggs[0] = (Gs[1] - 2.0*sigma_am*(u_phi_s[0] - options_cathode['coupling_var_phi_s'](t))/dx_s[0])/dx_s[0]
     
@@ -164,7 +164,7 @@ def func_Ue2(t, u, cs=None, phis=None, options_electrolyte=None, options_cathode
     
     if (options_electrolyte['sim_type']=="md_coupling_vars"):
         u_aux_c_s = options_cathode['coupling_vars'](t)
-    elif(options_electrolyte['sim_type']=="cosim_flux"):
+    elif(options_electrolyte['sim_type']=="md_sim_flux"):
         u_aux_c_s = np.r_[cs, phis] # Pass None vales to flx_Ne, flx_ie and G_aux_c_e
     elif(options_electrolyte['sim_type']=="monolithic"):
         u_aux_c_s = np.r_[cs, phis]
@@ -204,7 +204,7 @@ def func_Us2(t, u, ce=None, phie=None, options_electrolyte=None, options_cathode
     
     if (options_cathode['sim_type']=="md_coupling_vars"):
         u_aux_c_e = options_electrolyte['coupling_vars'](t)
-    elif(options_cathode['sim_type']=="cosim_flux"):
+    elif(options_cathode['sim_type']=="md_sim_flux"):
         u_aux_c_e = np.r_[ce, phie] # Pass None vales to flx_Ns, flx_is and G_aux_c_s
     elif(options_cathode['sim_type']=="monolithic"):
         u_aux_c_e = np.r_[ce, phie]
@@ -223,7 +223,7 @@ def func_Us2(t, u, ce=None, phie=None, options_electrolyte=None, options_cathode
     Ffs = varepsln*(Fs[1:] - Fs[0:-1])/dx_s[:]
     Ggs = (Gs[1:] - Gs[0:-1])/dx_s[:]
     
-    if (options_cathode['sim_type']=="cosim_flux"):
+    if (options_cathode['sim_type']=="md_sim_flux"):
         sigma_am = options_cathode['activematerial']['parameters']['sigma_am']
         Ggs[0] = (Gs[1] - 2.0*sigma_am*(u_phi_s[0] - options_cathode['coupling_var_phi_s'](t))/dx_s[0])/dx_s[0]
     

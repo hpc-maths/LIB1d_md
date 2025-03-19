@@ -66,7 +66,7 @@ def perform_adaptive_md_sim(y0_global, t_span,
                             adaptive_subsolves=True,
                             options_electrolyte=None,
                             options_cathode=None,
-                            bCosimVersion=False,
+                            bmd_simVersion=False,
                             md_sim_logger=100,
                             coupler_logger=100):
     
@@ -82,7 +82,7 @@ def perform_adaptive_md_sim(y0_global, t_span,
     subsolve_tol = WR_tol/5.
     getCV_tol = subsolve_tol/5.
     
-    if not bCosimVersion:
+    if not bmd_simVersion:
         from src.lib.model.coupler_lib1d_rhapsopy import BaseCoupler
         from src.lib.rhapsopy.coupling import Orchestrator
         from src.lib.rhapsopy.accelerators import NewtonSolver, DampedNewtonSolver, IQNSolver, AitkenUnderrelaxationSolver, AitkenScalarSolver, FixedPointSolver, AndersonSolver, ExplicitSolver
@@ -110,8 +110,8 @@ def perform_adaptive_md_sim(y0_global, t_span,
             md_sim.waveform_tolerance = WR_tol
             md_sim.raise_error_on_non_convergence = True 
     else:
-        from src.lib.model.coupler_lib1d_cosim import Coupler
-        from src.lib.rhapsopy.coupling_cosim import Orchestrator
+        from src.lib.model.coupler_lib1d_v1 import Coupler
+        from src.lib.rhapsopy.coupling_v1 import Orchestrator
 
         coupler = Coupler(options_electrolyte, options_cathode, coupling_modes=['neumann', 'neumann'])
         coupler.adaptive_subsolves = adaptive_subsolves
@@ -120,7 +120,7 @@ def perform_adaptive_md_sim(y0_global, t_span,
         coupler.rtol_subsolves_default = subsolve_tol
         
         md_sim = Orchestrator(coupler=coupler, NMAX=order)
-        md_sim.cosim_ordering = [0, 1]
+        md_sim.md_sim_ordering = [0, 1]
         md_sim.logger.setLevel(md_sim_logger)
         
         if bExplicitCoupling: # explicit coupling
@@ -196,7 +196,7 @@ def adaptive_md_study_loop(order_vec,
                                                bExplicitCoupling=bExplicitCoupling,
                                                options_electrolyte=options_electrolyte,
                                                options_cathode=options_cathode,
-                                               bCosimVersion=True, # coupling code version for paper
+                                               bmd_simVersion=True, # coupling code version for paper
                                                NITER_MAX=100,
                                                md_sim_logger=100)
     
@@ -215,8 +215,8 @@ def adaptive_md_study_loop(order_vec,
                                         dt_rtol=dt_rtol,
                                         bExplicitCoupling=bExplicitCoupling,
                                         options_electrolyte=options_electrolyte,
-                                        options_cathode=options_cathode, # coupling code version for paper
-                                        bCosimVersion=False,
+                                        options_cathode=options_cathode, 
+                                        bmd_simVersion=True, # coupling code version for paper
                                         NITER_MAX=100,
                                         md_sim_logger=100)
                 

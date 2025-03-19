@@ -49,7 +49,7 @@ class BaseCoupler(coupling.BaseCoupler):
         self.options2 = options2
         self.nSubsystems = 2
 
-        if self.options1['sim_type']=="cosim_flux" and self.options2['sim_type']=="cosim_flux":
+        if self.options1['sim_type']=="md_sim_flux" and self.options2['sim_type']=="md_sim_flux":
            self.nCouplingVars = 2 # number of coupling variables
         elif self.options1['sim_type']=="md_coupling_vars" and self.options2['sim_type']=="md_coupling_vars":
            self.nCouplingVars = 4 # number of coupling variables
@@ -78,7 +78,7 @@ class BaseCoupler(coupling.BaseCoupler):
         """ Take the generic list of predictors from the co-simulation class, and organise it into a physics-aware dictionary """
         self.logger.log(INTEGRATION_DETAIL, 'spreading predictors')
         
-        if self.options1['sim_type']=="cosim_flux" and self.options2['sim_type']=="cosim_flux":
+        if self.options1['sim_type']=="md_sim_flux" and self.options2['sim_type']=="md_sim_flux":
            self.predictors = {'coupling_flux': pred_list[0],
                                'coupling_var_phi_s' : pred_list[1]}
            
@@ -94,7 +94,7 @@ class BaseCoupler(coupling.BaseCoupler):
         
         self.logger.log(INTEGRATION_DETAIL, 'feeding options')
         
-        if self.options1['sim_type']=="cosim_flux" and self.options2['sim_type']=="cosim_flux":
+        if self.options1['sim_type']=="md_sim_flux" and self.options2['sim_type']=="md_sim_flux":
            self.options1['coupling_flux'] = lambda t : self.predictors['coupling_flux'].evaluate(t)
            self.options2['coupling_flux'] = lambda t : self.predictors['coupling_flux'].evaluate(t)
            self.options2['coupling_var_phi_s'] = lambda t : self.predictors['coupling_var_phi_s'].evaluate(t)
@@ -111,7 +111,7 @@ class BaseCoupler(coupling.BaseCoupler):
         ne = self.options1['nCells']
         coupling_var = y[2*ne+2:2*ne+6]
                 
-        if self.options1['sim_type']=="cosim_flux" and self.options2['sim_type']=="cosim_flux":
+        if self.options1['sim_type']=="md_sim_flux" and self.options2['sim_type']=="md_sim_flux":
                        
             from src.lib.model import aux_system as flx_aux
             ce = y[2*ne+2]

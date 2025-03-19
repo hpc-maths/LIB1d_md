@@ -12,12 +12,12 @@ from src.lib.post_process import time_series as y_ts
 ####################################################################################################################################################
 
 
-def plot_cv_evol(time_t, cv_ref, cv_cosim=None, plotType=None, compareType=None, title=" ", figsize=None, legend=True, figname=None):
+def plot_cv_evol(time_t, cv_ref, cv_md_sim=None, plotType=None, compareType=None, title=" ", figsize=None, legend=True, figname=None):
     if plotType is None:
         plotType ="line"
     
     if compareType is None:
-        if cv_cosim is not None:
+        if cv_md_sim is not None:
             compareType="difference"
             
     if plotType=="scatter":
@@ -48,20 +48,20 @@ def plot_cv_evol(time_t, cv_ref, cv_cosim=None, plotType=None, compareType=None,
               color='r', marker=marker, lw=lwref,
               label=r"$Monolithic$")
     
-    if cv_cosim is not None:
-        ax_l.plot(time_t, cv_cosim[3,:],
+    if cv_md_sim is not None:
+        ax_l.plot(time_t, cv_md_sim[3,:],
                   color='b', marker=marker2, lw=lwcos, linestyle='--',
-                  label=r"$Cosimulation$")               
+                  label=r"$md_simulation$")               
     
         ax_r = ax_l.twinx()
         
         if compareType=="difference":
-            ax_r.semilogy(time_t, np.abs(cv_ref[3,:]-cv_cosim[3,:])/cv_ref[3,:],
+            ax_r.semilogy(time_t, np.abs(cv_ref[3,:]-cv_md_sim[3,:])/cv_ref[3,:],
                       'k', lw=lwc)
             ax_l.plot(np.nan, np.nan, 'k', label=r"$Difference \ (\delta)$" )
             ax_r.set_ylabel(r"$\delta(\phi_{s, 0}^+)/\phi_{s, 0}^+ ._{ref}$")
         else:
-            ax_r.plot(time_t, np.abs(cv_cosim[3,:]/cv_ref[3,:]),
+            ax_r.plot(time_t, np.abs(cv_md_sim[3,:]/cv_ref[3,:]),
                       'k', lw=lwc)
             ax_l.plot(np.nan, np.nan, 'k', label=r"$Ratio$" )
             ax_r.set_ylabel(r"$\phi_{s, 0}^+/\phi_{s, 0}^+ ._{ref}$")
@@ -80,19 +80,19 @@ def plot_cv_evol(time_t, cv_ref, cv_cosim=None, plotType=None, compareType=None,
     ax_l.plot(time_t, cv_ref[2,:],
               color='r', marker=marker, lw=lwref)
     
-    if cv_cosim is not None:         
-        ax_l.plot(time_t, cv_cosim[2,:],
+    if cv_md_sim is not None:         
+        ax_l.plot(time_t, cv_md_sim[2,:],
                   color='b', marker=marker2, lw=lwcos, linestyle='--')
         
         ax_r = ax_l.twinx()
         
         if compareType=="difference":
-            ax_r.semilogy(time_t, np.abs(cv_ref[2,:]-cv_cosim[2,:])/cv_ref[2,:],
+            ax_r.semilogy(time_t, np.abs(cv_ref[2,:]-cv_md_sim[2,:])/cv_ref[2,:],
                       'k', lw=lwc)
             ax_r.set_ylabel(r"$\delta(c_{s, 0}^+)/c_{s, 0}^+ ._{ref}$")
             
         else:
-            ax_r.plot(time_t, np.abs(cv_cosim[2,:]/cv_ref[2,:]),
+            ax_r.plot(time_t, np.abs(cv_md_sim[2,:]/cv_ref[2,:]),
                       'k', lw=lwc)
             ax_r.set_ylabel(r"$c_{s, 0}^+/c_{s, 0}^+ ._{ref}$")
         
@@ -107,18 +107,18 @@ def plot_cv_evol(time_t, cv_ref, cv_cosim=None, plotType=None, compareType=None,
     ax_l.plot(time_t, cv_ref[1,:],
               color='r', marker=marker, lw=lwref)
     
-    if cv_cosim is not None:
-        ax_l.plot(time_t, cv_cosim[1,:],
+    if cv_md_sim is not None:
+        ax_l.plot(time_t, cv_md_sim[1,:],
                   color='b', marker=marker2, lw=lwcos, linestyle='--')
         
         ax_r = ax_l.twinx()
         
         if compareType=="difference":
-            ax_r.semilogy(time_t, np.abs(cv_ref[1,:]-cv_cosim[1,:])/cv_ref[1,:],
+            ax_r.semilogy(time_t, np.abs(cv_ref[1,:]-cv_md_sim[1,:])/cv_ref[1,:],
                       'k', lw=lwc)
             ax_r.set_ylabel(r"$\delta(\phi_{e, -1}^-)/\phi_{e, -1}^- ._{ref}$")
         else:
-            ax_r.plot(time_t, np.abs(cv_cosim[1,:]/cv_ref[1,:]),
+            ax_r.plot(time_t, np.abs(cv_md_sim[1,:]/cv_ref[1,:]),
                       'k', lw=lwc)
             ax_r.set_ylabel(r"$\phi_{e, -1}^-/\phi_{e, -1}^- ._{ref}$")
         
@@ -133,18 +133,18 @@ def plot_cv_evol(time_t, cv_ref, cv_cosim=None, plotType=None, compareType=None,
     ax_l.plot(time_t, cv_ref[0,:],
               color='r', marker=marker, lw=lwref)   
     
-    if cv_cosim is not None:
-        ax_l.plot(time_t, cv_cosim[0,:],
+    if cv_md_sim is not None:
+        ax_l.plot(time_t, cv_md_sim[0,:],
                   color='b', marker=marker2, lw=lwcos, linestyle='--')   
     
         ax_r = ax_l.twinx()
         
         if compareType=="difference":
-            ax_r.semilogy(time_t, np.abs(cv_ref[0,:]-cv_cosim[0,:])/cv_ref[0,:],
+            ax_r.semilogy(time_t, np.abs(cv_ref[0,:]-cv_md_sim[0,:])/cv_ref[0,:],
                       'k', lw=lwc)
             ax_r.set_ylabel(r"$\delta(c_{e, -1}^-)/c_{e, -1}^- ._{ref}$")
         else:
-            ax_r.plot(time_t, np.abs(cv_cosim[0,:]/cv_ref[0,:]),
+            ax_r.plot(time_t, np.abs(cv_md_sim[0,:]/cv_ref[0,:]),
                       'k', lw=lwc)
             ax_r.set_ylabel(r"$c_{e, -1}^-/c_{e, -1}^- ._{ref}$")
         

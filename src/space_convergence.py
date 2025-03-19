@@ -513,7 +513,7 @@ t_ind = np.array([ .01, .1, .5, 1., 4., 5.])/tc
 sol_i = outSol.sol(t_ind)
 
 t_i = t_ind*tc
-# sol_i = ref_sol_cc.sol(cosim_sols_cc[0].t)[:,0 : idxt]  
+# sol_i = ref_sol_cc.sol(md_sim_sols_cc[0].t)[:,0 : idxt]  
 
 from src.lib.jac_reorder import  jac_reorder as tf
 kk = 5

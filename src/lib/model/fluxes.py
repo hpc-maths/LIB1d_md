@@ -38,7 +38,7 @@ def flx_ie_f(t, c, phi, v_aux_a, v_aux_c, options_electrolyte, options_cathode, 
                          v_aux_c[3]*phi_c,
                          options_electrolyte,
                          options_cathode)
-    elif options_electrolyte['sim_type']=="cosim_flux":
+    elif options_electrolyte['sim_type']=="md_sim_flux":
         ise_C = options_electrolyte['coupling_flux'](t)
     else:
         raise Exception ('Define simulation type in electrolyte')
@@ -77,7 +77,7 @@ def flx_Ne_f(t, c, phi, v_aux_a, v_aux_c, options_electrolyte, options_cathode):
                          v_aux_c[3]*phi_c,
                          options_electrolyte,
                          options_cathode)
-    elif options_electrolyte['sim_type']=="cosim_flux":
+    elif options_electrolyte['sim_type']=="md_sim_flux":
         ise_C = options_electrolyte['coupling_flux'](t)
     else:
         raise Exception ('Define simulation type in electrolyte')
@@ -109,7 +109,7 @@ def flx_Ns_f(t, c, v_aux_c, options_electrolyte, options_cathode):
                          v_aux_c[3]*phi_c,
                          options_electrolyte,
                          options_cathode)
-    elif options_cathode['sim_type']=="cosim_flux":
+    elif options_cathode['sim_type']=="md_sim_flux":
         ise_C = options_cathode['coupling_flux'](t)
     else:
         raise Exception ('Define simulation type in solid')
@@ -147,7 +147,7 @@ def flx_is_f(t, phi, v_aux_c, options_electrolyte, options_cathode, alg=None):
                          v_aux_c[3]*phi_c,
                          options_electrolyte,
                          options_cathode)
-    elif options_cathode['sim_type']=="cosim_flux":
+    elif options_cathode['sim_type']=="md_sim_flux":
         ise_C = options_cathode['coupling_flux'](t)
     else:
         raise Exception ('Define simulation type in solid')
