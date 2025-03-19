@@ -2,7 +2,7 @@
 
 **Multi-domain time integration method with adaptive, implicit/explicit, and high-order coupling demonstrated for 1D lithium-ion batteries half-cell simulations at the microscale.**
 
-This repository provides Jupyter notebooks to reproduce the main results presented in [1].
+This repository provides Jupyter notebooks that can reproduce the main results presented in [1].
 
 Before running the notebooks, please check if the dependencies are installed
 

@@ -216,7 +216,7 @@ def adaptive_md_study_loop(order_vec,
                                         bExplicitCoupling=bExplicitCoupling,
                                         options_electrolyte=options_electrolyte,
                                         options_cathode=options_cathode, # coupling code version for paper
-                                        bCosimVersion=True,
+                                        bCosimVersion=False,
                                         NITER_MAX=100,
                                         md_sim_logger=100)
                 
