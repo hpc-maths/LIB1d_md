@@ -5,8 +5,8 @@ with open("README.md", "r") as fh:
 
 setup(
     name="lib1d_md",
-    version="0.0.1",
-    author="Ali Asad",
+    version="0.1",
+    author="Ali Asad (for LIB1D_MD TEAM)",
     author_email="ali.asad@polytechnique.edu",
     description="1D LIB simulations with multi-domain time integration",
     long_description=long_description,
