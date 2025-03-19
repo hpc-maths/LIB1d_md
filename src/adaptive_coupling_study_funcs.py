@@ -289,6 +289,7 @@ def work_precision_loop(dt_rtol_vec,
                                                     bExplicitCoupling=bExplicitCoupling,
                                                     options_electrolyte=options_electrolyte,
                                                     options_cathode=options_cathode,
+                                                    bmd_simVersion=True,
                                                     NITER_MAX=100,
                                                     md_sim_logger=100)
     
@@ -316,6 +317,7 @@ def work_precision_loop(dt_rtol_vec,
                                             bExplicitCoupling=bExplicitCoupling,
                                             options_electrolyte=options_electrolyte,
                                             options_cathode=options_cathode,
+                                            bmd_simVersion=True,
                                             NITER_MAX=100,
                                             md_sim_logger=100)
                 
