@@ -66,7 +66,7 @@ def perform_adaptive_md_sim(y0_global, t_span,
                             adaptive_subsolves=True,
                             options_electrolyte=None,
                             options_cathode=None,
-                            bmd_simVersion=False,
+                            bMDSim_v1=False,
                             md_sim_logger=100,
                             coupler_logger=100):
     
@@ -82,7 +82,7 @@ def perform_adaptive_md_sim(y0_global, t_span,
     subsolve_tol = WR_tol/5.
     getCV_tol = subsolve_tol/5.
     
-    if not bmd_simVersion:
+    if not bMDSim_v1:
         from src.lib.model.coupler_lib1d_rhapsopy import BaseCoupler
         from src.lib.rhapsopy.coupling import Orchestrator
         from src.lib.rhapsopy.accelerators import NewtonSolver, DampedNewtonSolver, IQNSolver, AitkenUnderrelaxationSolver, AitkenScalarSolver, FixedPointSolver, AndersonSolver, ExplicitSolver
@@ -168,6 +168,7 @@ def adaptive_md_study_loop(order_vec,
                         bExplicitCoupling=True,
                         options_electrolyte=None,
                         options_cathode=None,
+                        bMDSim_v1=False,
                         nparallel=0):
 
     if (options_electrolyte is None):
@@ -196,7 +197,7 @@ def adaptive_md_study_loop(order_vec,
                                                bExplicitCoupling=bExplicitCoupling,
                                                options_electrolyte=options_electrolyte,
                                                options_cathode=options_cathode,
-                                               bmd_simVersion=True, # coupling code version for paper
+                                               bMDSim_v1=bMDSim_v1, # coupling code version for paper
                                                NITER_MAX=100,
                                                md_sim_logger=100)
     
@@ -216,7 +217,7 @@ def adaptive_md_study_loop(order_vec,
                                         bExplicitCoupling=bExplicitCoupling,
                                         options_electrolyte=options_electrolyte,
                                         options_cathode=options_cathode, 
-                                        bmd_simVersion=True, # coupling code version for paper
+                                        bMDSim_v1=bMDSim_v1, # coupling code version for paper
                                         NITER_MAX=100,
                                         md_sim_logger=100)
                 
@@ -277,7 +278,7 @@ def work_precision_loop(dt_rtol_vec,
                                                     bExplicitCoupling=bExplicitCoupling,
                                                     options_electrolyte=options_electrolyte,
                                                     options_cathode=options_cathode,
-                                                    bmd_simVersion=True,
+                                                    bMDSim_v1=True,
                                                     NITER_MAX=100,
                                                     md_sim_logger=100)
     
@@ -305,7 +306,7 @@ def work_precision_loop(dt_rtol_vec,
                                             bExplicitCoupling=bExplicitCoupling,
                                             options_electrolyte=options_electrolyte,
                                             options_cathode=options_cathode,
-                                            bmd_simVersion=True,
+                                            bMDSim_v1=True,
                                             NITER_MAX=100,
                                             md_sim_logger=100)
                 

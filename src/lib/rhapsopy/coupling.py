@@ -680,12 +680,17 @@ class Orchestrator:
     step_info = []
 
 
-    ratio_rtol_toliter = 0.1
-    ratio_rtol_rtolsubsys = ratio_rtol_toliter * 0.2
+    # ratio_rtol_toliter = 0.1
+    # ratio_rtol_rtolsubsys = ratio_rtol_toliter * 0.2
+    # ratio_toliter_rtolsubsys = ratio_rtol_toliter / ratio_rtol_rtolsubsys
+    ratio_rtol_toliter = 1./5
+    ratio_rtol_rtolsubsys = 1./20
     ratio_toliter_rtolsubsys = ratio_rtol_toliter / ratio_rtol_rtolsubsys
-    # ratio_rtol_toliter = 1./5
-    # ratio_rtol_rtolsubsys = 1./20
 
+    print(
+      "Tolerances for adaptive simulation\n-------------------\n",
+      f"    rtol dt = {rtol},\n    WR_rtol = {min(self.minimum_waveform_tolerance, rtol * ratio_rtol_toliter)},\n    WR_atol = {min(self.minimum_waveform_tolerance, rtol * ratio_rtol_toliter)},\n    rtol subsys = {min(self.minimum_waveform_tolerance * ratio_toliter_rtolsubsys, rtol * ratio_rtol_rtolsubsys)}\n"
+      )
 
     while tn<t_span[-1]:
       bAccepted = False
