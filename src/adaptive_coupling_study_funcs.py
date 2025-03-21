@@ -186,7 +186,7 @@ def adaptive_md_study_loop(order_vec,
     # options_electrolyte=None,
     # options_cathode=None,
     
-    if nparallel==0: # old sequential
+    if nparallel==0: # sequential
         sim_md_sols = []
         for i, current_order in enumerate(order_vec):
             out_md_sim = perform_adaptive_md_sim(y0_global=y0_global,
@@ -225,20 +225,8 @@ def adaptive_md_study_loop(order_vec,
             pool = Parallel(n_jobs=nparallel, verbose=1000)
             results = pool(delayed(parfun)(current_order) for current_order in data)
         
-      # inefficient way to reorganise but works
-        # for it, ((current_order), out) in enumerate(zip(list(data),results)):
-        #     i = order_vec.tolist().index(current_order)
-        #     # print(it,i,j)
-        #     sim_md_sols[i] = out
         sim_md_sols = results
-        
-    #   # inefficient way to reorganise but works
-    #   for it, ((current_nt, current_order), out) in enumerate(zip(list(data),results)):
-    #     i = nt_vec.tolist().index(current_nt)
-    #     j = order_vec.tolist().index(current_order)
-    #     # print(it,i,j)
-    #     sim_md_sols[j][i] = out
-      
+          
       
     print('------------------------------\nstudy loop ended')
     if True:
@@ -345,8 +333,6 @@ def work_precision_loop(dt_rtol_vec,
             
 
     return md_sim_sols
-
-
 
 
 # Function to obtain the reference solution from monolithic simulation  
