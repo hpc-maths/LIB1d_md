@@ -47,10 +47,15 @@ ERRORTOOHIGH = 6      # error estimate too large
 ACCEPTED = 0          # step is accepted
 
 # Cuisine interne
-TOLERANCE_FACTOR_DTOPT = 1.01
+# TOLERANCE_FACTOR_DTOPT = 1.01
+# MAXRELSTEP = 2.0 # maximum increase factor for the time step
+# MINRELSTEP = 0.1 # minimum ...
+# SAFETY_FACTOR = 0.8
+
+TOLERANCE_FACTOR_DTOPT = 1.1
 MAXRELSTEP = 2.0 # maximum increase factor for the time step
 MINRELSTEP = 0.1 # minimum ...
-SAFETY_FACTOR = 0.8
+SAFETY_FACTOR = 0.9
 
 ncalls=None
 others=None
