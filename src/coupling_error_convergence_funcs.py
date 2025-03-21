@@ -84,7 +84,7 @@ def perform_md_simulation(y0_global, t_vec,
                           adaptive_subsolves=True,
                           adaptive_md_sim=False,
                           dt_rtol=None,
-                          bmd_simVersion=False,
+                          bMDSim_v1=False,
                           md_sim_logger=100,
                           coupler_logger=100,
                           outRef=None):
@@ -101,7 +101,7 @@ def perform_md_simulation(y0_global, t_vec,
     WR_tol = tol 
     
     
-    if not bmd_simVersion:
+    if not bMDSim_v1:
         from src.lib.model.coupler_lib1d_rhapsopy import BaseCoupler
         from src.lib.rhapsopy.coupling import Orchestrator
         from src.lib.rhapsopy.accelerators import NewtonSolver, DampedNewtonSolver, IQNSolver, AitkenUnderrelaxationSolver, AitkenScalarSolver, FixedPointSolver, AndersonSolver, ExplicitSolver
@@ -187,7 +187,7 @@ def perform_md_simulation(y0_global, t_vec,
     try :
         if md_sim_type == 'basic':
             # import pdb; pdb.set_trace()
-            if not bmd_simVersion:
+            if not bMDSim_v1:
                 out = md_sim.basic_integration(y0=y0, t_vec=used_t_vec,
                                             reset_predictors = reset_predictors, 
                                             high_order_iter_init= bHOI, nt_HOI=nt_HOI,
@@ -233,6 +233,7 @@ def convergence_study_loop(nt_vec,
                            options_electrolyte=None,
                            options_cathode=None,
                            outRef=None,
+                           bMDSim_v1=False,
                            nparallel=0):
     
     if (options_electrolyte is None):
@@ -252,7 +253,7 @@ def convergence_study_loop(nt_vec,
                                                  options_cathode=options_cathode,
                                                  NITER_MAX=100,
                                                  outRef=outRef,
-                                                 bmd_simVersion=True, # coupling code version for paper
+                                                 bMDSim_v1=bMDSim_v1, # coupling code version for paper
                                                  md_sim_logger=100)
       
               # sim_md_sols[j].append(out_md_sim)
@@ -273,7 +274,7 @@ def convergence_study_loop(nt_vec,
                                        options_cathode=options_cathode,
                                        NITER_MAX=100,
                                        outRef=outRef,
-                                       bmd_simVersion=True, # coupling code version for paper
+                                       bMDSim_v1=bMDSim_v1, # coupling code version for paper
                                        md_sim_logger=100)
               
       data = list(product(nt_vec, order_vec))
