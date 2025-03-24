@@ -662,7 +662,7 @@ class Orchestrator:
 
     print(
       "Tolerances for adaptive simulation\n-------------------\n",
-      f"    rtol dt = {rtol},\n    WR_rtol = {rtol/5},\n    WR_atol = {rtol/5},\n    rtol subsys = {rtol/20}\n"
+      f"\trtol dt = {rtol},\n\tWR_rtol = {rtol/5},\n\tWR_atol = {rtol/5},\n\trtol subsys = {rtol/20}\n----------"
       )
     
     while tn<t_span[-1]:

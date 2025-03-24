@@ -694,7 +694,7 @@ class Orchestrator:
 
     print(
       "Tolerances for adaptive simulation\n-------------------\n",
-      f"    rtol dt = {rtol},\n    WR_rtol = {min(self.minimum_waveform_tolerance, rtol * ratio_rtol_toliter)},\n    WR_atol = {min(self.minimum_waveform_tolerance, rtol * ratio_rtol_toliter)},\n    rtol subsys = {min(self.minimum_waveform_tolerance * ratio_toliter_rtolsubsys, rtol * ratio_rtol_rtolsubsys)}\n"
+      f"\trtol dt = {rtol},\n\tWR_rtol = {min(self.minimum_waveform_tolerance, rtol * ratio_rtol_toliter)},\n\tWR_atol = {min(self.minimum_waveform_tolerance, rtol * ratio_rtol_toliter)},\n\trtol subsys = {min(self.minimum_waveform_tolerance * ratio_toliter_rtolsubsys, rtol * ratio_rtol_rtolsubsys)}\n----------"
       )
 
     while tn<t_span[-1]:
