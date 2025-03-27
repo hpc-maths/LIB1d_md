@@ -820,7 +820,7 @@ class Orchestrator:
                                                                     rtol * ratio_rtol_toliter),
                                                       rtol_iter=min(self.minimum_waveform_tolerance,
                                                                     rtol * ratio_rtol_toliter),
-                                                      solver_number=1,
+                                                      solver_number=0,
                                                       embedded=True)
 
             except ExceptionWhichMayDisappearWhenLoweringDeltaT as e:
