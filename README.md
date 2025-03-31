@@ -12,10 +12,16 @@ Then, create and activate the conda environment using the provided `environment.
 
 ```bash
 conda env create -f conda/environment.yml
+```
+
+Activate the conda environment:
+
+```bash
 conda activate lib1d_md
 ```
 
-You can then launch the notebooks:
+You can now launch the notebooks:
+
 ```bash
 jupyter notebook 
 ```
