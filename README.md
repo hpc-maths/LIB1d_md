@@ -4,17 +4,32 @@
 
 This repository provides Jupyter notebooks that can reproduce the main results presented in [1].
 
-Before running the notebooks, please check if the dependencies are installed
+## Getting Started
+
+If you don’t have Anaconda or Miniconda installed, please install it first from [https://www.anaconda.com/products/distribution](https://www.anaconda.com/products/distribution).
+
+Then, create and activate the conda environment using the provided `environment.yml` file:
 
 ```bash
-pip check
-```
+conda env create -f conda/environment.yml
+conda activate lib1d_md
 
-If not, install them using
-
+You can then launch the notebooks:
 ```bash
-pip install -e .
-```
+jupyter notebook 
+
+
+# Before running the notebooks, please check if the dependencies are installed
+
+# ```bash
+# pip check
+# ```
+
+# If not, install them using
+
+# ```bash
+# pip install -e .
+# ```
 
 [1] A. Asad, R. de Loubens, L. François, and M. Massot,  
 *High-order adaptive multi-domain time integration scheme for microscale lithium-ion batteries simulations*,  
