@@ -20,18 +20,6 @@ You can then launch the notebooks:
 jupyter notebook 
 ```
 
-# Before running the notebooks, please check if the dependencies are installed
-
-# ```bash
-# pip check
-# ```
-
-# If not, install them using
-
-# ```bash
-# pip install -e .
-# ```
-
 [1] A. Asad, R. de Loubens, L. François, and M. Massot,  
 *High-order adaptive multi-domain time integration scheme for microscale lithium-ion batteries simulations*,  
 SMAI Journal of Computational Mathematics, 2024 (*article in revision*).  
