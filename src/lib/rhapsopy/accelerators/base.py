@@ -21,7 +21,15 @@ class BaseFixedPointSolver():
     raise NotImplementedError()
 
   def compute_error(self, x1, x2, rtol):
-    return  np.linalg.norm( (x1-x2) / ( rtol + rtol*abs(x2) ) )   /   np.sqrt(x1.size)
+    # return  np.linalg.norm( (x1-x2) / ( rtol + rtol*abs(x2) ) )   /   np.sqrt(x1.size) # new version
+    return  np.max( abs(x1-x2) / ( rtol + rtol*abs(x2) ) )
+    
+    # old version 
+    from scipy._lib._util import _asarray_validated, _lazywhere
+    def _relerr(actual, desired):
+        return (actual - desired) / desired
+    relerr = _lazywhere(x2 != 0, (x1, x2), f=_relerr, fillvalue=x1) / rtol # same as Scipy's fixed point algorithm
+    return np.max(np.abs(relerr))
 
   def compute_error_norm(self, error):
     return np.linalg.norm(error) / np.sqrt(error.size)

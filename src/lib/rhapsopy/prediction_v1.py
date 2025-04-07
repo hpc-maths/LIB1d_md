@@ -19,7 +19,7 @@ SUCCESS_THRESHOLD=3 # number of successful steps required before considering an 
 
 def compute_divided_diff_coef(x, y):
     """ Computes the divided difference coefficients required for the
-    evaluation of NEwton-type polynomials. """
+    evaluation of Newton-type polynomials. """
     n = x.size
     coef = y.copy()
     try:
@@ -30,7 +30,7 @@ def compute_divided_diff_coef(x, y):
     return coef
 
 def newton_interp(xi, yi, x):
-    """ CoOmputes the polynomial coefficients and evaluates the polynomial
+    """ Computes the polynomial coefficients and evaluates the polynomial
     at the inpmut points x """
     coef = compute_divided_diff_coef(xi, yi)
     return newton_interp_coef(xi, x, coef)

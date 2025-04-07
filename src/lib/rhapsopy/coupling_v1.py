@@ -16,6 +16,7 @@ from scipy.optimize import OptimizeResult as OdeResult
 import time as pytime
 import logging
 logging.raiseExceptions = True
+from src.lib.rhapsopy.rhapsopy_utils import ExceptionWhichMayDisappearWhenLoweringDeltaT, WRnonConvergence
 
 from src.lib.rhapsopy.prediction_v1 import predicteur
 
@@ -45,10 +46,6 @@ SAFETY_FACTOR = 0.9
 ncalls=None
 others=None
 
-
-class WRnonConvergence(Exception):
-    """ Exception class used in cased of convergence failure for implicit md_simulations """
-    pass
 
 class BaseCoupler():
     """ Model for the coupler class that handles the subsystem integration """
@@ -252,6 +249,8 @@ class Orchestrator:
     # adaptive integration
     self.embedded_method = False # if True, the coupling error is estimated by comparing the coupling variables
      # obtained for different approximation orders (better for implicit coupling)
+     
+    self.debug_temp = False
 
 
   def _step_forward(self, t, yn, dt, values_last_iterate, last_outs=None, rtol=None):
@@ -316,7 +315,8 @@ class Orchestrator:
     return np.hstack(newy), outs
 
 
-  def perform_step(self, y0, t, dt, atol_iter=None, rtol_iter=None, bDebug=False, bPrint=True, rtol=None):
+  def perform_step(self, y0, t, dt, atol_iter=None, rtol_iter=None, bDebug=False,
+                   bPrint=True, rtol=None, embedded=False):
         """ Perform the WR iteration process for a single time step """
         self.logger.log(INTEGRATION_DETAIL3, 'performing step')
         bConverged = False
@@ -350,7 +350,7 @@ class Orchestrator:
         #   update these last data points with the current iteration's values,
         #   so that we work in interpolation mode instead !
         # 1 - We append these points
-        if self.embedded_method:
+        if embedded:
           pass  # we do nothing here, since the embedded approach already provides the proper perdictor setup
         else:
           if abs((self.preds[0].x[0] - tnp1)/dt) < 1e-2:
@@ -409,11 +409,15 @@ class Orchestrator:
             # print(' --> coupling_vars_k=',coupling_vars_k[0])
             global ncalls
             global others
+            
             ncalls+=1
+            # print(f'call {ncalls}')
+            # print('\t uk=', coupling_vars_k)
             ynp1_kp1, outs_kp1 = self._step_forward(yn=y0, t=tn, dt=dt,
                                            values_last_iterate=coupling_vars_k,
                                            last_outs=outs_kp, rtol=rtol)
             coupling_vars_kp1 = self._getCouplingVars(t=tnp1, y=ynp1_kp1)
+            # print('\t ukp1=', coupling_vars_kp1)
             others["ynp1_kp1"] = ynp1_kp1
             others["outs_kp1"] = outs_kp1
             if full_output:
@@ -660,6 +664,15 @@ class Orchestrator:
     nsteps_failed = 0
     step_info = []
 
+  
+    # rtol_subsys=rtol/20
+    # atol_iter=rtol/5
+    # rtol_iter=rtol/5
+    rtol_subsys=1e-8
+    atol_iter=1e-7
+    rtol_iter=1e-7
+  
+
     print(
       "Tolerances for adaptive simulation\n-------------------\n",
       f"\trtol dt = {rtol},\n\tWR_rtol = {rtol/5},\n\tWR_atol = {rtol/5},\n\trtol subsys = {rtol/20}\n----------"
@@ -674,8 +687,16 @@ class Orchestrator:
       initial_extraps = self._backupPredictors()# to keep the original extrapolated values
       #TODO: improve by just keeping the predicted values for each possible order ?
       
+
       while not bAccepted:
         tnp1 = tn+dt # next coupling time
+        # print('tn=',tn, 'tnp1=',tnp1)
+        if self.debug_temp:
+          if tn>self.debug_time:
+            print('entering debug near t=19 s')
+            self.debug_temp = False
+            import pdb; pdb.set_trace()
+
         self._restorePredictors(preds=initial_extraps)
         if consecutive_fails>2: # lower the order of the predictors
           self.logger.log(INTEGRATION_DETAIL2,'Lowering the prediction order due to repeated failures')
@@ -690,9 +711,9 @@ class Orchestrator:
           bConverged, niter, ysol = self.perform_step(y0=yhist[i-1], t=tn,
                                                       dt=dt, bDebug=bDebug,
                                                       bPrint=(nPrintLevel>2),
-                                                      rtol=rtol/20,
-                                                      atol_iter=rtol/5,
-                                                      rtol_iter=rtol/5)
+                                                      rtol=rtol_subsys,
+                                                      atol_iter=atol_iter,
+                                                      rtol_iter=rtol_iter)
           if not bConverged:
               self.logger.log(INTEGRATION_DETAIL3,"\t solution did not converge")
               raise WRnonConvergence()
@@ -717,9 +738,10 @@ class Orchestrator:
               bConverged2, niter2, ysol2 = self.perform_step(y0=yhist[i-1], t=tn,
                                                       dt=dt, bDebug=False,
                                                       bPrint=(nPrintLevel>2),
-                                                      rtol=rtol/20,
-                                                      atol_iter=rtol/5,
-                                                      rtol_iter=rtol/5)
+                                                      rtol=rtol_subsys,
+                                                      atol_iter=atol_iter,
+                                                      rtol_iter=rtol_iter,
+                                                      embedded=True)
               if not bConverged2:
                   self.logger.log(INTEGRATION_DETAIL3,"\t embedded solution did not converge")
                   raise WRnonConvergence()
@@ -730,15 +752,15 @@ class Orchestrator:
               embedded_preds = self._backupPredictors()
               self._restorePredictors(main_preds)
               
-        except RuntimeError as e:
-            self.logger.log(INTEGRATION_DETAIL2, ' issue during WR iteration --> lowering time step')
-            self.logger.log(INTEGRATION_DETAIL3, f' error was {e}')
-            step_info.append((tn,dt,self._getPredOrders(),OTHEREXCEPTION))
-            dt=dt/4
-            nsteps_failed+=1
-            nsteps_total+=1
-            consecutive_fails+=1
-            continue
+        # except RuntimeError as e:
+        #     self.logger.log(INTEGRATION_DETAIL2, ' issue during WR iteration --> lowering time step')
+        #     self.logger.log(INTEGRATION_DETAIL3, f' error was {e}')
+        #     step_info.append((tn,dt,self._getPredOrders(),OTHEREXCEPTION))
+        #     dt=dt/4
+        #     nsteps_failed+=1
+        #     nsteps_total+=1
+        #     consecutive_fails+=1
+        #     continue
         except WRnonConvergence:
             self.logger.log(INTEGRATION_DETAIL3, 'WR Loop has not converged')
             if not (bConverged is None):
@@ -757,6 +779,26 @@ class Orchestrator:
             nsteps_total+=1
             consecutive_fails+=1
             continue
+          
+        except ExceptionWhichMayDisappearWhenLoweringDeltaT:
+            self.logger.log(INTEGRATION_DETAIL3, 'Issue which may disappear when lowering dt')
+            step_info.append((tn,dt,self._getPredOrders(),OTHEREXCEPTION))
+            dt=dt/4
+            nsteps_failed+=1
+            nsteps_total+=1
+            consecutive_fails+=1
+            continue
+          
+
+        except Exception as e:
+            # other exceptions, which have not been handled by the coupled object
+            import traceback
+            self.logger.critical('unexpected issue during WR iteration (embedded method) --> lowering time step')
+            self.logger.critical(f' error was {e}')
+            self.logger.critical(f' Traceback was {traceback.format_exc()}')
+            import pdb; pdb.set_trace()
+            raise e
+            
         # TODO: order adaptation --> lower order ?
 
         # Update predictors with the new coupling variables

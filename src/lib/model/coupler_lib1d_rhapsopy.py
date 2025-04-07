@@ -249,9 +249,15 @@ class BaseCoupler(coupling.BaseCoupler):
                                                                                     options_cathode=self.options2))
 
         assert sparse.isspmatrix_csc(mass), 'Mass matric not in csc format'
-        current_out = integrator(fun=fun, y0=y0, mass=mass,
-                                 sparsity=sparsity_pattern, var_idx=var_idx)
-        
+        try:
+          current_out = integrator(fun=fun, y0=y0, mass=mass,
+                                   sparsity=sparsity_pattern, var_idx=var_idx)
+        except RuntimeError as e:
+          if 'Factor is exactly singular' in str(e):
+            from src.lib.rhapsopy.rhapsopy_utils import ExceptionWhichMayDisappearWhenLoweringDeltaT
+            raise ExceptionWhichMayDisappearWhenLoweringDeltaT()
+          else:
+            raise e
         
         # print(current_out.success, current_out.message)
         if self.adaptive_subsolves:    

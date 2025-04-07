@@ -13,6 +13,7 @@ np.set_printoptions(precision=13)
 import matplotlib.pyplot as plt
 import scipy.integrate
 from scipy.optimize import OptimizeResult as OdeResult
+from src.lib.rhapsopy.rhapsopy_utils import ExceptionWhichMayDisappearWhenLoweringDeltaT, WRnonConvergence
 import time as pytime
 import traceback, sys
 
@@ -59,15 +60,6 @@ SAFETY_FACTOR = 0.9
 
 ncalls=None
 others=None
-
-
-class WRnonConvergence(Exception):
-    """ Exception class used in cased of convergence failure for implicit code-coupling """
-    pass
-
-class ExceptionWhichMayDisappearWhenLoweringDeltaT(Exception):
-    """ Exception class used for handling other issues (e.g. failures within subsystems) """
-    pass
 
 class BaseCoupler():
     """ Model for the coupler class that handles the subsystem integration """
@@ -156,6 +148,9 @@ class Orchestrator:
 
     self.smooth_predictors = False # extra acquired points are used to smooth the available data after each step
 
+    self.debug_temp = False
+    
+    
   def _init_log(self):
     # create logger
     self.logger = logging.getLogger("rhapsopy.coupling")
@@ -321,11 +316,14 @@ class Orchestrator:
             global ncalls
             global others
             ncalls+=1
+            # print(f'call {ncalls}')
+            # print('\t uk=', coupling_vars_k)
             ynp1_kp1 = self._step_forward(yn=y0, t=tn, dt=dt,
                                           values_last_iterate=coupling_vars_k,
                                           state_last_iterate=others["ynp1_kp1"],
                                           rtol=rtol)
             coupling_vars_kp1 = self._getCouplingVars(t=tnp1, y=ynp1_kp1)
+            # print('\t ukp1=', coupling_vars_kp1)
             others["ynp1_kp1"] = ynp1_kp1
             if full_output:
                 return coupling_vars_kp1, ynp1_kp1
@@ -685,17 +683,28 @@ class Orchestrator:
     step_info = []
 
 
-    # ratio_rtol_toliter = 0.1
-    # ratio_rtol_rtolsubsys = ratio_rtol_toliter * 0.2
+    # # ratio_rtol_toliter = 0.1
+    # # ratio_rtol_rtolsubsys = ratio_rtol_toliter * 0.2
+    # # ratio_toliter_rtolsubsys = ratio_rtol_toliter / ratio_rtol_rtolsubsys
+    # ratio_rtol_toliter = 1./5
+    # ratio_rtol_rtolsubsys = 1./20
     # ratio_toliter_rtolsubsys = ratio_rtol_toliter / ratio_rtol_rtolsubsys
-    ratio_rtol_toliter = 1./5
-    ratio_rtol_rtolsubsys = 1./20
-    ratio_toliter_rtolsubsys = ratio_rtol_toliter / ratio_rtol_rtolsubsys
+    
+    
+    # rtol = min(self.minimum_waveform_tolerance * ratio_toliter_rtolsubsys,
+    #            rtol * ratio_rtol_rtolsubsys),
+    # atol_iter=min(self.minimum_waveform_tolerance,
+    #               rtol * ratio_rtol_toliter),
+    # rtol_iter=min(self.minimum_waveform_tolerance,
+    #               rtol * ratio_rtol_toliter),
+    rtol_subsys=1e-8
+    atol_iter=1e-7
+    rtol_iter=1e-7
 
-    print(
-      "Tolerances for adaptive simulation\n-------------------\n",
-      f"\trtol dt = {rtol},\n\tWR_rtol = {min(self.minimum_waveform_tolerance, rtol * ratio_rtol_toliter)},\n\tWR_atol = {min(self.minimum_waveform_tolerance, rtol * ratio_rtol_toliter)},\n\trtol subsys = {min(self.minimum_waveform_tolerance * ratio_toliter_rtolsubsys, rtol * ratio_rtol_rtolsubsys)}\n----------"
-      )
+    # print(
+    #   "Tolerances for adaptive simulation\n-------------------\n",
+    #   f"\trtol dt = {rtol},\n\tWR_rtol = {min(self.minimum_waveform_tolerance, rtol * ratio_rtol_toliter)},\n\tWR_atol = {min(self.minimum_waveform_tolerance, rtol * ratio_rtol_toliter)},\n\trtol subsys = {min(self.minimum_waveform_tolerance * ratio_toliter_rtolsubsys, rtol * ratio_rtol_rtolsubsys)}\n----------"
+    #   )
 
     while tn<t_span[-1]:
       bAccepted = False
@@ -707,7 +716,7 @@ class Orchestrator:
       self.logger.log(INTEGRATION_DETAIL,        f"\ttn={tn:.3e} s (step {i})")
       initial_extraps = self._backupPredictors()# to keep the original extrapolated values
       #TODO: improve by just keeping the predicted values for each possible order ?
-
+      
       while not bAccepted:
         self.logger.log(INTEGRATION_DETAIL2,f"\t tn={tn:.3e} s, dt={dt:.3e} (try {ntry})")
         if keepUniformSampling: # create fictious sampling points that remain equidistant
@@ -724,6 +733,13 @@ class Orchestrator:
                 # p.nsuccess_with_current_order = oldSuccess
 
         tnp1 = tn + dt # next coupling time
+        # print('tn=',tn, 'tnp1=',tnp1)
+        if self.debug_temp:
+          if tn>self.debug_time:
+            print('entering debug near t=19 s')
+            self.debug_temp = False
+            import pdb; pdb.set_trace()
+
         self._restorePredictors(preds=initial_extraps)
         # if consecutive_fails>2: # lower the order of the predictors
         #   self.logger.log(INTEGRATION_DETAIL2,'Lowering the prediction order due to repeated failures')
@@ -737,12 +753,9 @@ class Orchestrator:
           # and that the corresponding coupling vars are used afterwards !
           coupling_vars_np1, niter, ysol = self.perform_step(y0=yhist[i-1], t=tn,
                                                       dt=dt, bDebug=bDebug,
-                                                      rtol = min(self.minimum_waveform_tolerance * ratio_toliter_rtolsubsys,
-                                                                 rtol * ratio_rtol_rtolsubsys),
-                                                      atol_iter=min(self.minimum_waveform_tolerance,
-                                                                    rtol * ratio_rtol_toliter),
-                                                      rtol_iter=min(self.minimum_waveform_tolerance,
-                                                                    rtol * ratio_rtol_toliter),
+                                                      rtol=rtol_subsys,
+                                                      atol_iter=atol_iter,
+                                                      rtol_iter=rtol_iter,
                                                       solver_number=0)
         except ExceptionWhichMayDisappearWhenLoweringDeltaT as e:
             self.logger.log(INTEGRATION_DETAIL2, ' issue during WR iteration --> lowering time step')
@@ -771,6 +784,7 @@ class Orchestrator:
             self.logger.critical('unexpected issue during WR iteration (embedded method) --> lowering time step')
             self.logger.critical(f' error was {e}')
             self.logger.critical(f' Traceback was {traceback.format_exc()}')
+            import pdb; pdb.set_trace()
             raise e
 
         ## coupling_vars_np1 = self._getCouplingVars(t=tnp1, y=ysol)
@@ -814,12 +828,9 @@ class Orchestrator:
             try:
               coupling_vars_np1_2, niter2, ysol2 = self.perform_step(y0=yhist[i-1], t=tn,
                                                       dt=dt, bDebug=False,
-                                                      rtol = min(self.minimum_waveform_tolerance * ratio_toliter_rtolsubsys,
-                                                                 rtol * ratio_rtol_rtolsubsys),
-                                                      atol_iter=min(self.minimum_waveform_tolerance,
-                                                                    rtol * ratio_rtol_toliter),
-                                                      rtol_iter=min(self.minimum_waveform_tolerance,
-                                                                    rtol * ratio_rtol_toliter),
+                                                      rtol=rtol_subsys,
+                                                      atol_iter=atol_iter,
+                                                      rtol_iter=rtol_iter,
                                                       solver_number=1,
                                                       embedded=True)
 
@@ -850,6 +861,7 @@ class Orchestrator:
                 self.logger.critical('unexpected issue during WR iteration (embedded method) --> lowering time step')
                 self.logger.critical(f' error was {e}')
                 self.logger.critical(f' Traceback was {traceback.format_exc()}')
+                import pdb; pdb.set_trace()
                 raise e
 
             truly_used_preds_embd = self._backupPredictors()
@@ -1103,525 +1115,3 @@ def process_step_info(outCoupled):
 
 class OrderNotAchievable(Exception):
     pass
-
-
-
-
-class Orchestrator2(Orchestrator):
-  """ Specialisation to test antoher order adaptation method """
-
-  def perform_one_step_at_given_order(self, delta_order, y0, tn, dt, rtol, init_preds, bDebug):
-      self.logger.log(INTEGRATION_DETAIL5, f"One step at delta_order={delta_order}")
-
-      ratio_rtol_toliter = 0.1
-      ratio_rtol_rtolsubsys = ratio_rtol_toliter * 0.2
-      # ratio_rtol_toliter = 1./5
-      # ratio_rtol_rtolsubsys = 1./20
-      ratio_toliter_rtolsubsys = ratio_rtol_toliter / ratio_rtol_rtolsubsys
-
-
-      # restore initial predictors
-      self._restorePredictors(preds=init_preds)
-      old_orders = self._getPredOrders()
-      # add future point tn+1 in preparation for the iterations
-      self._advancePredictors(t=tn+dt, coupling_vars=[p.evaluate(tn+dt) for p in self.preds], bIncreaseN=False)
-
-      # change their orders as desired
-      for ip, p in enumerate(self.preds):
-          self.logger.log(INTEGRATION_DETAIL5, f'-- predictor {ip} --')
-          oldN = p.N
-          # oldN = old_orders[ip]
-          assert p.N==old_orders[ip]
-          self.logger.log(INTEGRATION_DETAIL5, str(p))
-          # p.changeNmax(oldN + delta_order)
-          # self.logger.log(INTEGRATION_DETAIL5, 'p.N={}, p.NMAX={}, p.Nacquired={}'.format( p.N, p.NMAX, p.Nacquired ))
-          # p.N = oldN + delta_order
-          # p.setCurrentN( oldN + delta_order )
-          new_order = min(p.Nacquired, oldN + delta_order) # as possible based on the available points (including the future one)
-          new_order = min(p.NMAX+2, new_order) # do not exceed maximum allowed order (+1 for higher-order embedded method)
-          new_order = max(1, new_order) # do not fall below 1
-          p.changeNmax( new_order + 2 )
-          p.setCurrentN( new_order )
-          self.logger.log(INTEGRATION_DETAIL5, str(p))
-      new_orders = self._getPredOrders()
-
-      # # drop the oldest point
-      # for oldN,pred in zip(oldNs,self.preds):
-      #    pred.setCurrentN(oldN)
-
-      self.logger.log(INTEGRATION_DETAIL5, 'old orders = '+str(old_orders))
-      self.logger.log(INTEGRATION_DETAIL5, 'new orders = '+str(new_orders))
-
-      if not all([p.Nacquired>=p.N for p in self.preds]):
-        import pdb; pdb.set_trace()
-        raise Exception('delta_order is too large !')
-
-
-      if not any( (new_orders - old_orders) == delta_order):
-        raise OrderNotAchievable('issue with order variation')
-
-
-      coupling_vars_np1, niter, ysol = self.perform_step(y0=y0, t=tn,
-                                          dt=dt, bDebug=bDebug,
-                                          rtol = min(self.minimum_waveform_tolerance * ratio_toliter_rtolsubsys,
-                                                     rtol * ratio_rtol_rtolsubsys),
-                                          atol_iter=min(self.minimum_waveform_tolerance,
-                                                        rtol * ratio_rtol_toliter),
-                                          rtol_iter=min(self.minimum_waveform_tolerance,
-                                                        rtol * ratio_rtol_toliter),
-                                          embedded=True,
-                                          solver_number=0) # TODO: optimise
-
-      self._updatePredictors(t=tn+dt, coupling_vars=coupling_vars_np1)
-      self.logger.log(INTEGRATION_DETAIL5, f' --> converged in {niter} to u='+str(coupling_vars_np1))
-
-
-      return coupling_vars_np1, niter, ysol, self._backupPredictors()
-
-
-  def adaptive_integration(self, y0, t_span, atol, rtol, reset_predictors=True,
-                           adaptive_order=False, first_step=1e-6, max_step=np.inf,
-                           max_nt=np.inf,
-                           nPrintLevel=np.inf, bDebug=False, keepUniformSampling=False,
-                           bDenseOutput=False,
-                           high_order_iter_init=False):
-    """ Adaptive integration with prescribed error tolerances, suited to order adaptation"""
-
-    self.logger.log(INTEGRATION, "Adaptive integration begins")
-
-    assert len(t_span)==2
-    tstart = pytime.time()
-
-    if reset_predictors:
-      # reset predictors
-      for p in self.preds:
-        p.reset()
-      # assert self.preds[0].x is None, 'Predictors seem to have been initialised already'
-
-      # add the starting point as initial data for the predictors
-      t0 = t_span[0]
-      self._advancePredictors(t=t0, coupling_vars=self._getCouplingVars(t=t0, y=y0))
-    for p in self.preds:
-      p.setTolerances(atol=atol,rtol=rtol)
-
-    ##### Temporal loop #####
-    yhist  = [y0]
-    thist = [t_span[0]]
-    interpolants = []
-    interpolants_init, interpolants_embd1, interpolants_embd2 = [], [], [] # for the embedded method
-    interpolants_true_embd1, interpolants_true_embd2 = [], []
-    couplingvar_hist = [ np.hstack([p.evaluate(t0) for p in self.preds]) ]
-    iter_hist = [] # WR iterations per step
-    iter_hist2 = [] # WR iterations per step for the embedded method
-    p_hist = [] #p.N for p in self.preds]] # prediction orders
-
-    tn = t_span[0]
-    dt = first_step
-    i=0
-    nsteps_total = 0
-    nsteps_rejected = 0
-    nsteps_accepted = 0
-    nsteps_failed = 0
-    step_info = []
-
-
-    while tn<t_span[-1]:
-      bAccepted = False
-      ntry=1
-      i+=1
-      if i>max_nt:
-        break
-      consecutive_fails = -1
-      self.logger.log(INTEGRATION_DETAIL,        f"\ttn={tn:.3e} s (step {i})")
-
-      if self.smooth_predictors:
-        # reform predictors with smoothed data
-        import warnings
-        with warnings.catch_warnings():
-          warnings.simplefilter('error', np.RankWarning)
-          try:
-            for p in self.preds:
-              if p.Nacquired > p.N:
-                # import pdb; pdb.set_trace()
-                t = p._x[:p.Nacquired]
-                t = t-t[0]
-                weights = np.exp( 3*(t-t[0])/(t[0]-t[-1]) )
-                for j in range(p.ndata):
-                  y = p._y[j,:p.Nacquired]
-                  y0 = y[0]
-                  y = y - y0
-                  poly = np.polyfit(x=t, y=y, deg=p.N-1, w=weights)
-                  newy = np.polyval(poly, t)
-                  newy = newy - newy[0] + y0 # recenter so that the last point is preserved
-                  p._y[j,:p.Nacquired] = newy
-                p.needRefresh = True
-          except np.RankWarning as e:
-            import pdb; pdb.set_trace()
-            raise e
-
-
-      initial_extraps = self._backupPredictors()# to keep the original extrapolated values
-      #TODO: improve by just keeping the predicted values for each possible order ?
-
-      while not bAccepted:
-        self.logger.log(INTEGRATION_DETAIL2,f"\t tn={tn:.3e} s, dt={dt:.3e} (try {ntry})")
-        self.logger.log(INTEGRATION_DETAIL3, f"orders="+str([p.N for p in self.preds]))
-        if keepUniformSampling: # create fictious sampling points that remain equidistant
-            for p in initial_extraps:
-                new_times = [tn + ii*dt for ii in range(-p.Nacquired+1,1)]
-                new_vals = [p.evaluate(tt, allow_outside=True) for tt in new_times]
-                oldN = p.N
-                oldSuccess = p.nsuccess_with_current_order
-                p.reset()
-                for tt,yy in zip(new_times, new_vals):
-                    p.appendData(x=tt, y=yy)
-                p.setCurrentN(oldN)
-                p.nsuccess_with_current_order = oldSuccess
-
-        tnp1 = tn + dt # next coupling time
-
-        self._restorePredictors(initial_extraps)
-
-
-        # Determine all the order variations to be tested
-        if adaptive_order:
-            max_delta_order = 2
-            min_delta_order = -1
-
-            # minP = min(self._getPredOrders() )
-
-            # for p in self.preds:
-            #   max_delta_order = min( max_delta_order, p.Nacquired - p.N+1)
-            #   # min_delta_order = max( min_delta_order, -(p.N-1) )
-            #   min_delta_order = max( min_delta_order, -p.N )
-
-            delta_orders = range(min_delta_order, max_delta_order+1)
-            if self.higher_order_embedded  or i<2:
-              bHigherOrderEmbd = True
-            else:
-              bHigherOrderEmbd = False
-        else:
-          if self.higher_order_embedded  or i<2:
-            bHigherOrderEmbd = True
-            delta_orders = [0,1]
-          else:
-            delta_orders = [-1,0]
-            bHigherOrderEmbd = False
-
-        self.logger.log(INTEGRATION_DETAIL5, 'NMAX='+str([p.NMAX for p in self.preds]))
-        self.logger.log(INTEGRATION_DETAIL5, 'N='+str([p.N for p in self.preds]))
-        self.logger.log(INTEGRATION_DETAIL5, 'Nacquired='+str([p.Nacquired for p in self.preds]))
-        self.logger.log(INTEGRATION_DETAIL5, 'delta_orders='+str(delta_orders))
-
-
-        order_dict = {}
-        for k in delta_orders:
-          order_dict[k]={"delta_order": k,
-                         "coupling_vars":None,
-                         "preds":None,
-                         "ysol":None,
-                         "niter":None,}
-        anyFailed = False
-        for key in list(order_dict.keys()):
-          dico = order_dict[key]
-          delta_ord = dico['delta_order']
-          # if delta_ord==2:
-            # print('caution !')
-            # pass
-          bFailed = False
-          try:
-            dico['coupling_vars'], dico['niter'], dico['ysol'], dico['preds'] = \
-            self.perform_one_step_at_given_order(delta_order=delta_ord,
-                                                 y0=yhist[i-1],
-                                                 tn=tn, dt=dt, rtol=rtol,
-                                                 init_preds=initial_extraps, bDebug=bDebug)
-
-          except ExceptionWhichMayDisappearWhenLoweringDeltaT as e:
-              self.logger.log(INTEGRATION_DETAIL2, ' issue during WR iteration --> lowering time step')
-              self.logger.log(INTEGRATION_DETAIL3, f' error was {e}')
-              self.logger.log(INTEGRATION_DETAIL3, f' Traceback was {traceback.format_exc()}')
-              ERROR_CODE = OTHEREXCEPTION
-              bFailed=True
-
-          except WRnonConvergence:
-              self.logger.log(INTEGRATION_DETAIL3, 'WR Loop has not converged --> lowering time step')
-              ERROR_CODE = WRNONCONVERGENCE
-              bFailed = True
-
-          except OrderNotAchievable:
-            self.logger.log(INTEGRATION_DETAIL3, 'No room for order change --> discarding this particular step')
-            bFailed = False
-            # just filter out impossible order configurations
-            order_dict.pop(key)
-
-
-          # except Exception as e:
-          #     # other exceptions, which have not been handled by the coupled object
-          #     self.logger.critical(f'unexpected issue during WR iteration (delta_ord={delta_ord}) --> lowering time step')
-          #     self.logger.critical(f' error was {e}')
-          #     self.logger.critical(f' Traceback was {traceback.format_exc()}')
-          #     raise e
-
-          if bFailed:
-            anyFailed = True
-            print('fail with key=',key)
-            break
-            # if dico['delta_order']==0:
-            #   break # main computation failed --> cannot proceeed
-            # order_dict.pop(key)
-
-        keys = list(order_dict.keys())
-        # if len(keys)<2 and anyFailed:
-        self.logger.log(INTEGRATION_DETAIL3, f'anyFailed={anyFailed}')
-        if anyFailed:
-            dt=dt/4
-            nsteps_failed+=1
-            nsteps_total+=1
-            consecutive_fails+=1
-            step_info.append((tn,dt,self._getPredOrders(),ERROR_CODE))
-            continue
-
-        #### Error control
-        # compute error based on the comparison of the extrapolated and converged coupling variables
-
-        self.logger.log(INTEGRATION_DETAIL3, '------ Error estimation -----------')
-
-        assert len(keys)>1 # nothing to estimate the error :\
-
-        dt_opts_list = []
-        delta_orders_list = []
-
-        if bHigherOrderEmbd: #self.higher_order_embedded:
-          istart=0; iend=len(keys)-1
-        else:
-          istart=1; iend=len(keys)
-        for ikey in range(istart, iend):
-          if bHigherOrderEmbd: #self.higher_order_embedded:
-            key_main = keys[ikey]
-            key_embd = keys[ikey+1]
-          else:
-            key_main = keys[ikey]
-            key_embd = keys[ikey-1]
-
-          dico_main = order_dict[ key_main ]
-          dico_embd = order_dict[ key_embd ]
-          self.logger.log(INTEGRATION_DETAIL3, f"estimating coupling errors for delta_order={key_main} (with respect to delta_order={key_embd})")
-
-          dt_opts = []
-          bFoundValidOrderDifference = False
-          for ii in range(len(self.preds)):
-              main_pred = dico_main['preds'][ii]
-              embd_pred = dico_embd['preds'][ii]
-
-              if self.logger.isEnabledFor(INTEGRATION_DETAIL5):
-                self.logger.log(INTEGRATION_DETAIL5, f'     var {ii}')
-                self.logger.log(INTEGRATION_DETAIL5, 'main_pred: '+str(main_pred))
-                self.logger.log(INTEGRATION_DETAIL5, 'embd_pred: '+str(embd_pred))
-                self.logger.log(INTEGRATION_DETAIL5, 'comparison between orders {} and {}'.format(main_pred.N, embd_pred.N))
-                self.logger.log(INTEGRATION_DETAIL5, ' embd_pred(tnp1)  = '+str(embd_pred.evaluate(tnp1)))
-                self.logger.log(INTEGRATION_DETAIL5, ' main_pred(tnp1)  = '+str(main_pred.evaluate(tnp1)))
-                self.logger.log(INTEGRATION_DETAIL5, ' init_pred(tnp1)  = '+str(initial_extraps[ii].evaluate(tnp1)))
-              if main_pred.N==embd_pred.N:
-                dt_opt = np.nan
-              else:
-                dt_opt = main_pred.eval_optimal_timestep(other_pred=embd_pred, tn=tn, tnp1=tnp1)
-                bFoundValidOrderDifference = True
-              dt_opts.append( dt_opt )
-          assert bFoundValidOrderDifference, 'something went wrong with the orders'
-
-          dt_opts_list.append( dt_opts )
-          # if self.higher_order_embedded:
-          delta_orders_list.append( dico_main['delta_order'])
-          # else:
-          #   delta_orders_list.append( dico_embd['delta_order'])
-
-          self.logger.log(INTEGRATION_DETAIL4, '\tdt_opts  = '+str(dt_opts) )
-
-        dt_opts_array = np.array(dt_opts_list).T # shape (ndata, delta_orders)
-
-        imain = delta_orders_list.index(0)
-        dt_opts = dt_opts_list[imain]
-        imain2 = keys.index(0)
-        dicomain = order_dict[ keys[imain2] ]
-        # dt_opt = min( dt_opts )
-        dt_opt = min( np.max(dt_opts_array, axis=0) )
-        if np.isnan(dt_opt):
-          dt_opt = 1E2 * dt
-        ysol = dicomain['ysol']
-        niter_embd = sum([order_dict[k]['niter'] for k in keys if k!=0])
-        niter = order_dict[0]['niter']
-        coupling_vars_np1 = dicomain['coupling_vars']
-
-        bAccepted =  dt < TOLERANCE_FACTOR_DTOPT * dt_opt
-
-        if bAccepted:
-          self._restorePredictors(dicomain['preds'])
-          yhist.append( np.copy(ysol) )
-          couplingvar_hist.append( coupling_vars_np1 ) #np.hstack([p.evaluate(tnp1) for p in self.preds]) )
-          thist.append( tnp1 )
-          iter_hist.append( niter )
-          iter_hist2.append( niter_embd )
-          p_hist.append( self._getPredOrders() )
-
-          self.logger.log(INTEGRATION_DETAIL2, '\t==> accepted step')
-          step_info.append((tn,dt,self._getPredOrders(),ACCEPTED,dt_opts,dt_opt))
-          nsteps_accepted+=1
-
-          # prepare next step
-          self._restorePredictors(initial_extraps)
-          # self._updatePredictors(t=tnp1, coupling_vars=coupling_vars_np1)
-          for p in self.preds:
-            p.nsuccess_with_current_order += 1
-
-          if adaptive_order and i > 1:
-            bAdaptOrder=True
-            self.logger.log(INTEGRATION_DETAIL5, 'Adapting order')
-            self.logger.log(INTEGRATION_DETAIL5, 'Old Ns: '+str([p.N for p in self.preds]))
-            for ip, p in enumerate(self.preds):
-              self.logger.log(INTEGRATION_DETAIL5, '   '+str(p))
-              ibest_order = np.nanargmax(dt_opts_array[ip,:])
-              if np.all( dt_opts_array[ip,:] / dt > MAXRELSTEP ): #1e2 ):
-                # all orders allow for large dt increase (possibly due to trivial WR)
-                # --> avoid useless order changes and assume order can be maintained or increased
-                self.logger.log(INTEGRATION_DETAIL5, 'All orders lead to large dt increase --> no dynamic order adaptation')
-                newN = min(p.N+1, p.NMAX)
-                # bAdaptOrder=False
-              else:
-                newN = initial_extraps[ip].N + delta_orders_list[ibest_order]
-
-              if newN>p.NMAX:
-                newN = p.NMAX
-                # p.changeNmax( newN )
-
-              # detect potential instability
-
-
-              # TODO: instability detection based on polynomial oscillations (counts the zero crossing of the second derivative)
-              # including all acquired points
-              # if instability --> reduce order, or even regenerate smooth values with polyfit ?
-              Nup = p.N #acquired
-              if 0: #Nup>2:
-                # method 1
-                if not p.isPolynomialWellBehaved(order=p.N):
-                  self.logger.log(INTEGRATION_DETAIL5, ' /!\ Instability detected')
-                  newN = p.N-1
-
-                # method 2
-                poly = np.polyfit(p._x[:Nup], y=p._y[0,:Nup], deg=Nup-1)
-                polyder = np.polyder(poly, m=2)
-                values  = np.polyval(polyder, p._x[:Nup])
-                nb_changes = sum(np.diff(np.sign(values)) != 0)*1
-                if nb_changes:
-                  self.logger.log(INTEGRATION_DETAIL5, ' /!\ second derivative sign change detected')
-                  newN = p.N-1
-                  # p.discard_oldest_point()
-
-                # method 3
-                nb_roots = sum( np.abs(f.imag)<(1e-6 + 1e-6*np.abs(f.imag)) for f in set(np.polynomial.polynomial.polyroots(polyder)) )
-                if nb_roots>0:
-                  self.logger.log(INTEGRATION_DETAIL5, ' /!\ roots detected')
-
-              # update order
-              if newN>p.N and p.nsuccess_with_current_order<p.N+1:
-                pass # we ask for a few steps to have been performed at constant order before increasing it
-              else:
-                try:
-                  p.setCurrentN( newN )
-                except Exception as e:
-                  import pdb; pdb.set_trace()
-                  raise e
-              self.logger.log(INTEGRATION_DETAIL5, '-->'+str(p))
-
-          else: # increase order if possible
-            bAdaptOrder=False
-
-
-          # lambda poly: sum( np.abs(f.imag)<(1e-6 + 1e-6*np.abs(f.imag)) for f in set(np.polynomial.polyroots(poly)) )
-
-          #   for p in self.preds:
-          #     p.setCurrentN(min(p.NMAX, p.Nacquired+1))
-          self.logger.log(INTEGRATION_DETAIL5, 'New Ns: '+str([p.N for p in self.preds]))
-          self._advancePredictors(t=tnp1, coupling_vars=coupling_vars_np1, bIncreaseN=not bAdaptOrder) # update (and increase order if required)
-          self.logger.log(INTEGRATION_DETAIL5, 'New Ns after advance: '+str([p.N for p in self.preds]))
-          self.logger.log(INTEGRATION_DETAIL5, 'New orders after advance: '+str(self._getPredOrders()))
-          tn=tnp1
-
-        else:
-          self.logger.log(INTEGRATION_DETAIL3,"\t step refused (error too large)")
-          step_info.append((tn,dt,self._getPredOrders(),ERRORTOOHIGH,dt_opts,dt_opt))
-          nsteps_rejected+=1
-          ntry+=1
-
-        nsteps_total+=1
-        dt_opt = SAFETY_FACTOR*dt_opt
-        dt_original = dt
-        assert dt_opt>0
-        dt=dt_opt
-
-        # deadzone
-        if (dt >  dt_original*self.deadzone[0]) and (dt < dt_original*self.deadzone[1]):
-          dt = dt_original
-          self.logger.log(INTEGRATION_DETAIL3, 'time step unchanged (deadzone)')
-
-        if dt<MINRELSTEP*dt_original:
-          self.logger.log(INTEGRATION_DETAIL3, 'time step limited by maximum reduction factor')
-          dt = MINRELSTEP*dt_original
-
-        if dt>MAXRELSTEP*dt_original:
-          self.logger.log(INTEGRATION_DETAIL3, 'time step limited by maximum increase factor')
-          dt = MAXRELSTEP*dt_original
-
-        if bAccepted:
-          dt_end = t_span[1]-tnp1
-        else:
-          dt_end = t_span[1]-tn
-        if dt>dt_end:
-          self.logger.log(INTEGRATION_DETAIL3, 'time step limited by final time')
-          dt = dt_end
-
-        if dt>max_step:
-          self.logger.log(INTEGRATION_DETAIL3, 'time step limited by maximum allowed time step')
-          dt = max_step
-
-        if dt<0:
-          msg = "time step has become negative"
-          self.logger.critical(msg)
-          raise Exception(msg)
-
-        self.logger.log(INTEGRATION_DETAIL3, f'old_dt={dt_original}, dt_opt={dt_opt}, new_dt={dt}')
-
-    if i>max_nt:
-      self.logger.log(INTEGRATION, 'maximum number of steps reached')
-    else:
-      self.logger.log(INTEGRATION, 'Adaptive coupled integration has successfully reached end time')
-    tend = pytime.time()
-
-    out = OdeResult()
-    out.t = np.array(thist)
-    out.y = np.array(yhist).T
-    assert out.y.ndim == 2
-    out.z = np.array(couplingvar_hist).T
-    out.success = True
-    out.message = 'Success'
-    out.WR_iters = np.array( iter_hist )
-    # if self.embedded_method:
-    if len(iter_hist2)>0:
-      out.WR_iters2 = np.array( iter_hist2 )
-    if bDenseOutput:
-        out.solz = OdeSolution(out.t, interpolants)
-        out.solz_init = OdeSolution(out.t, interpolants_init)
-        out.solz_embd1 = OdeSolution(out.t, interpolants_embd1)
-        out.solz_true_embd1 = OdeSolution(out.t, interpolants_true_embd1)
-        if self.embedded_method:
-          out.solz_embd2 = OdeSolution(out.t, interpolants_embd2)
-          out.solz_true_embd2 = OdeSolution(out.t, interpolants_true_embd2)
-
-    out.nsteps_total = nsteps_total
-    out.nsteps_rejected = nsteps_rejected
-    out.nsteps_accepted = nsteps_accepted
-    out.nsteps_failed = nsteps_failed
-    out.CPUtime = tend-tstart
-    out.p_hist = np.array(p_hist)
-    out.step_info = step_info
-
-    return out

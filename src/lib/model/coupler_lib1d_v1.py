@@ -259,7 +259,9 @@ class Coupler(coupling.BaseCoupler):
             
             if not current_out.success:
                 # import pdb; pdb.set_trace()
-                raise Exception(current_out.message)
+                from src.lib.rhapsopy.rhapsopy_utils import ExceptionWhichMayDisappearWhenLoweringDeltaT, WRnonConvergence
+                raise ExceptionWhichMayDisappearWhenLoweringDeltaT(current_out.message)
+                # raise Exception(current_out.message)
         else:
             class set_current_out:
                 def __init__(self, y, t):

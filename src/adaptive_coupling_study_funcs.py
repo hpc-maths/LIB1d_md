@@ -85,7 +85,7 @@ def perform_adaptive_md_sim(y0_global, t_span,
     if not bMDSim_v1:
         from src.lib.model.coupler_lib1d_rhapsopy import BaseCoupler
         from src.lib.rhapsopy.coupling import Orchestrator
-        from src.lib.rhapsopy.accelerators import NewtonSolver, DampedNewtonSolver, IQNSolver, AitkenUnderrelaxationSolver, AitkenScalarSolver, FixedPointSolver, AndersonSolver, ExplicitSolver
+        from src.lib.rhapsopy.accelerators import DampedNewtonSolver, FixedPointSolver, ExplicitSolver
     
         coupler = BaseCoupler(options_electrolyte, options_cathode, coupling_modes=['neumann', 'neumann'])        
         coupler.adaptive_subsolves = adaptive_subsolves
@@ -100,7 +100,7 @@ def perform_adaptive_md_sim(y0_global, t_span,
             
         if bExplicitCoupling: # explicit coupling
             md_sim.interfaceSolver = ExplicitSolver
-            md_sim.NITER_MAX = NITER_MAX
+            md_sim.NITER_MAX = 1
             md_sim.waveform_tolerance = WR_tol
             md_sim.raise_error_on_non_convergence = False
         else: # implicit coupling
@@ -121,6 +121,7 @@ def perform_adaptive_md_sim(y0_global, t_span,
         
         md_sim = Orchestrator(coupler=coupler, NMAX=order)
         md_sim.md_sim_ordering = [0, 1]
+        md_sim.gauss_seidel = False
         md_sim.logger.setLevel(md_sim_logger)
         
         if bExplicitCoupling: # explicit coupling
@@ -138,7 +139,13 @@ def perform_adaptive_md_sim(y0_global, t_span,
     reset_predictors = True
     
     first_step = 1e-6
+    # first_step = 5.
     max_step = abs(t_span[-1] - t_span[0])/6.
+    
+    md_sim.enforce_last_call = False
+    # md_sim.enforce_last_call = True
+    # md_sim.debug_temp = True # to debug ater a given time, do not use !
+    # md_sim.debug_time = 5.24 #4.95
     
     try :
         dt_atol=dt_rtol/10
@@ -151,7 +158,8 @@ def perform_adaptive_md_sim(y0_global, t_span,
                                         max_step=max_step)         
     except Exception as e:
         raise e
-        print('Random exception caught \n', e)   
+        print('Random exception caught \n', e)
+        from scipy.optimize import OptimizeResult as OdeResult
         out = OdeResult()
         out.success = False
         out.message = f"Rejected Multi-Domain Simulation with Early exit due to {e}"
