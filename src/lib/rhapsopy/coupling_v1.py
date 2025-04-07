@@ -665,12 +665,12 @@ class Orchestrator:
     step_info = []
 
   
-    # rtol_subsys=rtol/20
-    # atol_iter=rtol/5
-    # rtol_iter=rtol/5
-    rtol_subsys=1e-8
-    atol_iter=1e-7
-    rtol_iter=1e-7
+    rtol_subsys=rtol/20
+    atol_iter=rtol/5
+    rtol_iter=rtol/5
+    # rtol_subsys=1e-8
+    # atol_iter=1e-7
+    # rtol_iter=1e-7
   
 
     print(

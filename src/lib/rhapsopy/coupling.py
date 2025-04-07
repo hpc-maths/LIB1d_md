@@ -697,9 +697,12 @@ class Orchestrator:
     #               rtol * ratio_rtol_toliter),
     # rtol_iter=min(self.minimum_waveform_tolerance,
     #               rtol * ratio_rtol_toliter),
-    rtol_subsys=1e-8
-    atol_iter=1e-7
-    rtol_iter=1e-7
+    # rtol_subsys=1e-8
+    # atol_iter=1e-7
+    # rtol_iter=1e-7
+    rtol_subsys=rtol/20
+    atol_iter=rtol/5
+    rtol_iter=rtol/5
 
     # print(
     #   "Tolerances for adaptive simulation\n-------------------\n",
