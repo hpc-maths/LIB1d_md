@@ -28,7 +28,7 @@ tc = (L_c ** 2) / D_e_c # s --> Timescale for dimensionless times
 # %%
 cvType = 'sinewave' # Oscillating sinewave voltage operating condition
 
-order_vec= np.array(range(1, 4 + 1)) # Vector of orders of coupling studied
+order_vec= np.array(range(2, 4 + 1)) # Vector of orders of coupling studied
 # order_vec= [3]
 
 tini_dim = 0.0 # Simulation start time in s
@@ -102,7 +102,7 @@ out_transient = study.initial_transient_sim(
 options_cathode['sim_type']="md_coupling_vars"
 options_electrolyte['sim_type']="md_coupling_vars"
 
-nparallel=0
+nparallel=4
 
 # sols_md_implicit = study.adaptive_md_study_loop(
 #                                         order_vec,
