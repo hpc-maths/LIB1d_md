@@ -66,7 +66,6 @@ def perform_adaptive_md_sim(y0_global, t_span,
                             adaptive_subsolves=True,
                             options_electrolyte=None,
                             options_cathode=None,
-                            bMDSim_v1=False,
                             md_sim_logger=100,
                             coupler_logger=100):
     
@@ -82,58 +81,32 @@ def perform_adaptive_md_sim(y0_global, t_span,
     subsolve_tol = WR_tol/5.
     getCV_tol = subsolve_tol/5.
     
-    if not bMDSim_v1:
-        from src.lib.model.coupler_lib1d_rhapsopy import BaseCoupler
-        from src.lib.rhapsopy.coupling import Orchestrator
-        from src.lib.rhapsopy.accelerators import DampedNewtonSolver, FixedPointSolver, ExplicitSolver
-    
-        coupler = BaseCoupler(options_electrolyte, options_cathode, coupling_modes=['neumann', 'neumann'])        
-        coupler.adaptive_subsolves = adaptive_subsolves
-        coupler.rtol_getCouplingVars_default = getCV_tol
-        coupler.rtol_subsolves_default = subsolve_tol
-        coupler.logger.setLevel(coupler_logger)
-        
-        md_sim = Orchestrator(coupler=coupler, order=order)   
-        md_sim.subsystem_ordering = [0, 1]
-        md_sim.logger.setLevel(md_sim_logger)
-        md_sim.gauss_seidel=False
-            
-        if bExplicitCoupling: # explicit coupling
-            md_sim.interfaceSolver = ExplicitSolver
-            md_sim.NITER_MAX = 1
-            md_sim.waveform_tolerance = WR_tol
-            md_sim.raise_error_on_non_convergence = False
-        else: # implicit coupling
-            md_sim.interfaceSolver = FixedPointSolver
-            # md_sim.interfaceSolver = DampedNewtonSolver; print('using damped Newton solver !')
-            md_sim.NITER_MAX = NITER_MAX
-            md_sim.waveform_tolerance = WR_tol
-            md_sim.raise_error_on_non_convergence = True 
-    else:
-        from src.lib.model.coupler_lib1d_v1 import Coupler
-        from src.lib.rhapsopy.coupling_v1 import Orchestrator
+    from src.lib.model.coupler_lib1d_rhapsopy import BaseCoupler
+    from src.lib.rhapsopy.coupling import Orchestrator
+    from src.lib.rhapsopy.accelerators import DampedNewtonSolver, FixedPointSolver, ExplicitSolver
 
-        coupler = Coupler(options_electrolyte, options_cathode, coupling_modes=['neumann', 'neumann'])
-        coupler.adaptive_subsolves = adaptive_subsolves
-        coupler.logger.setLevel(coupler_logger)
-        coupler.rtol_getCouplingVars_default = getCV_tol
-        coupler.rtol_subsolves_default = subsolve_tol
+    coupler = BaseCoupler(options_electrolyte, options_cathode, coupling_modes=['neumann', 'neumann'])        
+    coupler.adaptive_subsolves = adaptive_subsolves
+    coupler.rtol_getCouplingVars_default = getCV_tol
+    coupler.rtol_subsolves_default = subsolve_tol
+    coupler.logger.setLevel(coupler_logger)
+    
+    md_sim = Orchestrator(coupler=coupler, order=order)   
+    md_sim.subsystem_ordering = [0, 1]
+    md_sim.logger.setLevel(md_sim_logger)
+    md_sim.gauss_seidel=False
         
-        md_sim = Orchestrator(coupler=coupler, NMAX=order)
-        md_sim.md_sim_ordering = [0, 1]
-        md_sim.gauss_seidel = False
-        md_sim.logger.setLevel(md_sim_logger)
-        
-        if bExplicitCoupling: # explicit coupling
-            md_sim.interfaceSolver = 'explicit'
-            md_sim.NITER_MAX = 1
-            md_sim.waveform_tolerance = WR_tol
-            md_sim.raise_error_on_non_convergence = False
-        else: # implicit coupling
-            md_sim.interfaceSolver = 'fixed-point'
-            md_sim.NITER_MAX = NITER_MAX
-            md_sim.waveform_tolerance = WR_tol
-            md_sim.raise_error_on_non_convergence = True
+    if bExplicitCoupling: # explicit coupling
+        md_sim.interfaceSolver = ExplicitSolver
+        md_sim.NITER_MAX = 1
+        md_sim.waveform_tolerance = WR_tol
+        md_sim.raise_error_on_non_convergence = False
+    else: # implicit coupling
+        md_sim.interfaceSolver = FixedPointSolver
+        # md_sim.interfaceSolver = DampedNewtonSolver; print('using damped Newton solver !')
+        md_sim.NITER_MAX = NITER_MAX
+        md_sim.waveform_tolerance = WR_tol
+        md_sim.raise_error_on_non_convergence = True
             
     y0 = y0_global
     reset_predictors = True
@@ -176,7 +149,6 @@ def adaptive_md_study_loop(order_vec,
                         bExplicitCoupling=True,
                         options_electrolyte=None,
                         options_cathode=None,
-                        bMDSim_v1=False,
                         nparallel=0):
 
     if (options_electrolyte is None):
@@ -205,7 +177,6 @@ def adaptive_md_study_loop(order_vec,
                                                bExplicitCoupling=bExplicitCoupling,
                                                options_electrolyte=options_electrolyte,
                                                options_cathode=options_cathode,
-                                               bMDSim_v1=bMDSim_v1, # coupling code version for paper
                                                NITER_MAX=100,
                                                md_sim_logger=100)
     
@@ -225,7 +196,6 @@ def adaptive_md_study_loop(order_vec,
                                         bExplicitCoupling=bExplicitCoupling,
                                         options_electrolyte=options_electrolyte,
                                         options_cathode=options_cathode, 
-                                        bMDSim_v1=bMDSim_v1, # coupling code version for paper
                                         NITER_MAX=100,
                                         md_sim_logger=100)
                 
@@ -286,7 +256,6 @@ def work_precision_loop(dt_rtol_vec,
                                                     bExplicitCoupling=bExplicitCoupling,
                                                     options_electrolyte=options_electrolyte,
                                                     options_cathode=options_cathode,
-                                                    bMDSim_v1=True,
                                                     NITER_MAX=100,
                                                     md_sim_logger=100)
     
@@ -314,7 +283,6 @@ def work_precision_loop(dt_rtol_vec,
                                             bExplicitCoupling=bExplicitCoupling,
                                             options_electrolyte=options_electrolyte,
                                             options_cathode=options_cathode,
-                                            bMDSim_v1=True,
                                             NITER_MAX=100,
                                             md_sim_logger=100)
                 
