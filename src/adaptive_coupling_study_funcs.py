@@ -88,7 +88,8 @@ def perform_adaptive_md_sim(y0_global, t_span,
     coupler = BaseCoupler(options_electrolyte, options_cathode, coupling_modes=['neumann', 'neumann'])        
     coupler.adaptive_subsolves = adaptive_subsolves
     coupler.rtol_getCouplingVars_default = getCV_tol
-    coupler.rtol_subsolves_default = subsolve_tol
+    # coupler.rtol_subsolves_default = subsolve_tol
+    # coupler.manual_subsolve_tol = True
     coupler.logger.setLevel(coupler_logger)
     
     md_sim = Orchestrator(coupler=coupler, order=order)   
@@ -130,8 +131,8 @@ def perform_adaptive_md_sim(y0_global, t_span,
                                         first_step=first_step,
                                         max_step=max_step)         
     except Exception as e:
-        raise e
-        print('Random exception caught \n', e)
+        # raise e
+        print(f"Random exception caught at p={order-1} and dt_rtol={dt_rtol}\n", e)
         from scipy.optimize import OptimizeResult as OdeResult
         out = OdeResult()
         out.success = False
@@ -217,7 +218,7 @@ def adaptive_md_study_loop(order_vec,
 
 
 # Function to run work-precision study loop
-def work_precision_loop(dt_rtol_vec,
+def work_precision_loop(dt_rtol_vec_dict,
                         order_vec,
                         t_md_start,
                         t_md_end,
@@ -239,16 +240,11 @@ def work_precision_loop(dt_rtol_vec,
 
     t_vec = np.array([t_md_start, t_md_end])                
     if nparallel==0:        
-        md_sim_sols = [[None for i in dt_rtol_vec] for k in order_vec]
-        for i, current_dt_rtol in enumerate(tqdm(dt_rtol_vec)):
+        md_sim_sols = [[None for i in dt_rtol_vec_dict[order_vec[0]]] for k in order_vec]
+        for i in range(tqdm(len(dt_rtol_vec_dict[order_vec[0]]))):
             for j, current_order in enumerate(order_vec):
-                # if current_order == 1:
-                #     dt_rtol = min(current_dt_rtol*1e4, max(dt_rtol_vec)*1e1/(5-i)) 
-                # elif current_order == 2:
-                #     dt_rtol = min(current_dt_rtol*1e2, max(dt_rtol_vec)*1e1/(5-i))
-                # else:
-                #     dt_rtol = current_dt_rtol        
-                dt_rtol = current_dt_rtol        
+                # dt_rtol = current_dt_rtol        
+                dt_rtol = dt_rtol_vec_dict[current_order][i]        
                 out_md_sim = perform_adaptive_md_sim(y0_global=y0_global,
                                                     t_span=t_vec,
                                                     order=current_order,
@@ -259,22 +255,15 @@ def work_precision_loop(dt_rtol_vec,
                                                     NITER_MAX=100,
                                                     md_sim_logger=100)
     
-            print("pmax =", current_order-1,
+            print("p =", current_order-1,
                   " rtol =", f"{dt_rtol:.0E}",
                   " : simulation", out_md_sim.message if (out_md_sim is not None) else 'Failure')
             md_sim_sols[j].append(out_md_sim)
     else:
-        md_sim_sols = [[None for i in dt_rtol_vec] for k in order_vec]
+        md_sim_sols = [[None for i in dt_rtol_vec_dict[order_vec[0]]] for k in order_vec]
         from joblib import Parallel, delayed, parallel_config
         from itertools import product
         def parfun(current_dt_rtol, current_order):
-            # i = dt_rtol_vec.tolist().index(current_dt_rtol)
-            # if current_order == 1:
-            #     dt_rtol = min(current_dt_rtol*1e4, max(dt_rtol_vec)*1e1/(5-i)) 
-            # elif current_order == 2:
-            #     dt_rtol = min(current_dt_rtol*1e2, max(dt_rtol_vec)*1e1/(5-i))
-            # else:
-            #     dt_rtol = current_dt_rtol
             dt_rtol = current_dt_rtol
             return perform_adaptive_md_sim(y0_global=y0_global,
                                             t_span=t_vec,
@@ -286,26 +275,42 @@ def work_precision_loop(dt_rtol_vec,
                                             NITER_MAX=100,
                                             md_sim_logger=100)
                 
-        data = list(product(dt_rtol_vec, order_vec))
+        # data = list(product(dt_rtol_vec, order_vec))
+        # order = order_vec[0]
+        # data = [(dt_rtol, order) for dt_rtol in dt_rtol_vec_dict[order] for order in order_vec]
+        data = [(dt_rtol, order) for order in order_vec for dt_rtol in dt_rtol_vec_dict[order]]
         with parallel_config(backend="loky", inner_max_num_threads=2):
             pool = Parallel(n_jobs=nparallel, verbose=1000)
             results = pool(delayed(parfun)(current_dt_rtol, current_order) for current_dt_rtol, current_order in data)
-
+            
+        results_dict = { (dt_rtol, order): result for (dt_rtol, order), result in zip(data, results) }
+        
+        # for it, ((current_dt_rtol, current_order), out) in enumerate(zip(list(data),results)):
+        #     i = dt_rtol_vec_dict[current_order].tolist().index(current_dt_rtol)
+        #     j = order_vec.tolist().index(current_order)
+        #     md_sim_sols[j][i] = out
+            
+        #     print("p =", current_order-1,
+        #           " rtol =", f"{dt_rtol_vec_dict[current_order][i]:.0E}",
+        #           " : simulation", out.message if (out is not None) else 'Failure')
+        for i in range(len(dt_rtol_vec_dict[order_vec[0]])):
+            for j, current_order in enumerate(order_vec):
+                out_sim = results_dict[(dt_rtol_vec_dict[current_order][i], current_order)]
+            
+            print("p =", current_order-1,
+                  " rtol =", f"{dt_rtol_vec_dict[current_order][i]:.0E}",
+                  " : simulation", out_sim.message if (out_sim is not None) else 'Failure')
+            md_sim_sols[j].append(out_sim)
+            
+            
+        
         for it, ((current_dt_rtol, current_order), out) in enumerate(zip(list(data),results)):
-            i = dt_rtol_vec.tolist().index(current_dt_rtol)
+            i = dt_rtol_vec_dict[current_order].tolist().index(current_dt_rtol)
             j = order_vec.tolist().index(current_order)
             md_sim_sols[j][i] = out
             
-            # if current_order == 1:
-            #     dt_rtol = min(current_dt_rtol*1e4, max(dt_rtol_vec)*1e1/(5-i)) 
-            # elif current_order == 2:
-            #     dt_rtol = min(current_dt_rtol*1e2, max(dt_rtol_vec)*1e1/(5-i))
-            # else:
-            #     dt_rtol = current_dt_rtol
-            
-            dt_rtol = current_dt_rtol
-            print("pmax =", current_order-1,
-                  " rtol =", f"{dt_rtol:.0E}",
+            print("p =", current_order-1,
+                  " rtol =", f"{dt_rtol_vec_dict[current_order][i]:.0E}",
                   " : simulation", out.message if (out is not None) else 'Failure')
             
 
@@ -379,8 +384,13 @@ def get_errors(dt_rtol_vec, order_vec, md_sols, ref_sol):
             else:
                 erri = abs(md_sol_y[:,-1]- ref_sol_y[:,-1])
                 
-                errki = erri/(1e-15 + abs(ref_sol_y[:,-1]))
-                errk = np.linalg.norm(errki) #/ np.sqrt(errki.size)
+                nrmlz = np.sqrt(np.sum(abs(ref_sol_y[:,-1])**2))
+                if nrmlz < 1e-15:
+                    nrmlz += 1e-15
+                errk = np.sqrt( np.sum( erri**2))/nrmlz
+                
+                # errki = erri/(1e-15 + abs(ref_sol_y[:,-1]))
+                # errk = np.linalg.norm(errki) #/ np.sqrt(errki.size)
         
             err[j, i] = errk 
     return err
