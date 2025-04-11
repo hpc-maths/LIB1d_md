@@ -8,7 +8,7 @@ This repository provides Jupyter notebooks that can reproduce the main results p
 
 If you don’t have Anaconda or Miniconda installed, please install it first from [https://www.anaconda.com/products/distribution](https://www.anaconda.com/products/distribution).
 
-Then, create and activate the conda environment using the provided `environment.yml` file:
+Create a conda environment using the provided `environment.yml` file, which includes all the required dependencies:
 
 ```bash
 conda env create -f conda/environment.yml
