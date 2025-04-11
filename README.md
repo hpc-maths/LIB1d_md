@@ -26,6 +26,8 @@ You can now launch the notebooks:
 jupyter notebook 
 ```
 
+Note: To plot figures with $\LaTeX$ text, please ensure that you have a valid LaTeX distribution installed, such as TeX Live, MiKTeX, or MacTeX.
+
 [1] A. Asad, R. de Loubens, L. François, and M. Massot,  
 *High-order adaptive multi-domain time integration scheme for microscale lithium-ion batteries simulations*,  
 SMAI Journal of Computational Mathematics, 2024 (*article in revision*).  
