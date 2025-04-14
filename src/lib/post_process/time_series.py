@@ -1,3 +1,7 @@
+# Copyright 2022 LIB1D_MD TEAM. All rights reserved.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
+
 # -*- coding: utf-8 -*-
 """
 Created on Wed Jun  1 14:55:09 2022

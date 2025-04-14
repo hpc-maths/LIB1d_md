@@ -1,3 +1,7 @@
+# Copyright 2022 LIB1D_MD TEAM. All rights reserved.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
+
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse import csc_matrix, issparse, eye, diags
